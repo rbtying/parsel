@@ -1,0 +1,22 @@
+Name:           parsel
+Version:        0.1
+Cabal-Version:  >= 1.2
+License:        Apache
+Author:         ...
+Synopsis:       ...
+Build-Type:     Simple
+
+Executable parsel
+  Main-Is:        Main.hs
+  Other-modules:  AlexToken,HappyParser
+  Hs-Source-Dirs: src
+  Build-Depends:  base >= 4,array
+  GHC-Options:    -Wall
+
+-- Executable parsel
+--   Main-Is:        Main.hs
+
+--   Hs-Source-Dirs: src
+--   Build-Depends:  base >= 4, array, containers, mtl, regex-compat
+--   Build-Tools:    alex, happy
+--   GHC-Options:    -Wall
