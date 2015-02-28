@@ -1,1 +1,0 @@
-main(signal sysin) -> signal = intervalMap(10ms, filterInterval, sysin)
