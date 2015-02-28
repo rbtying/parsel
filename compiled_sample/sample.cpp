@@ -4,6 +4,7 @@
 
 #include "fft4g.c"
 #include "wavfile.h"
+#include "Signal.h"
 
 int main(int argc, char **argv)
 {
