@@ -3,6 +3,7 @@
 // will need WavSignal, DAWSignal, FunctionSignal
 
 #include <vector>
+#include <tuple>
 #include <complex>
 
 namespace psl
@@ -11,9 +12,8 @@ namespace psl
 
     class Signal
     {
-    pubic:
-        virtual fillBuffer()
-    private:
+    public:
+        virtual void fillBuffer();
         double sampleRate_;
         buffer_t buffer_;
     };
