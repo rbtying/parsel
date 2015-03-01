@@ -3,7 +3,6 @@
 #include <cstdlib>
 
 #include "fft4g.c"
-#include "wavfile.h"
 #include "Signal.h"
 
 int main(int argc, char **argv)
@@ -14,5 +13,4 @@ int main(int argc, char **argv)
         std::exit(1);
     }
 
-    FILE *input = wavfile_open(argv[1]);
 }
