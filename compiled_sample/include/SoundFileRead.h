@@ -53,7 +53,7 @@ class SoundFileRead : public SoundHeader {
 
    protected:
       FileIO        sndfile;                 // soundfile input stream
-      char    *filename;                     // name of the soundfile
+      char         *filename;                // name of the soundfile
       int           endianType;              // how soundfile data is stored
       Array<double> current;                 // output samples, by channel
  
