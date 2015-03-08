@@ -1,6 +1,5 @@
 // fun facts
 // sample rate will be global to program
-// will need WavSignal, DAWSignal, FunctionSignal
 
 #include <vector>
 #include <tuple>
@@ -8,12 +7,16 @@
 
 namespace psl
 {
-    typedef std::vector<std::tuple<std::complex<double>, std::complex<double>>> buffer_t;
+    typedef std::vector<std::complex<double>> sample_t;
+    typedef std::vector<sample_t> buffer_t;
 
     class Signal
     {
     public:
-        virtual void fillBuffer();
+        Signal(std::string fileName);
+
+        void fillBuffer();
+
         double sampleRate_;
         buffer_t buffer_;
     };

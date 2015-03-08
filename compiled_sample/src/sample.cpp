@@ -9,8 +9,8 @@ int main(int argc, char **argv)
 {
     if(argc < 2)
     {
-        std::cout << "Give a file pls\n";
+        std::cout << "Give a file please\n";
         std::exit(1);
     }
-
+    psl::Signal(std::string(argv[1]));
 }
