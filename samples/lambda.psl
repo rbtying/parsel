@@ -1,0 +1,1 @@
+\(hertz freq) -> sample = if freq < cutoff then (1, 0) else (0, 1)

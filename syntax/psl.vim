@@ -16,7 +16,7 @@ syntax match pslComment "\v#.*$" contains=pslTodo
 
 syntax keyword pslKeyword map merge chop ft applyFilterF applyFilterT
 syntax keyword pslKeyword with in let
-syntax keyword pslKeyword if then else
+syntax keyword pslKeyword if then else unless
 
 syntax keyword pslConstant sysin sysout
 

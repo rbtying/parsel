@@ -1,0 +1,2 @@
+intervalMap(seconds width, f(interval, seconds) -> interval, signal input) -> signal =
+    merge(width, map(f, chop(width, input)))

@@ -1,0 +1,33 @@
+main(signal sysin) -> signal = intervalMap(10ms, filterInterval, sysin)
+
+filterInterval(interval input) -> interval =
+    let cutoff(seconds t) -> hertz = envelope(0, 10s, t) * 1000Hz in
+        applyFilterF with leftRightFilter(cutoff(input.start)), input
+
+leftRightFilter(hertz cutoff) -> fsignal = fsignal with
+    \(hertz freq) -> sample = if freq < cutoff then (1, 0) else (0, 1)
+
+envelope(seconds attack, seconds decay, seconds time) -> float = 
+    if time < attack then
+        time / attack
+    else if time < decay then
+        1 - (time - attack) / decay
+    else
+        0
+
+# maybe library functions
+intervalMap(seconds width, f(interval, seconds) -> interval, signal input) -> signal =
+    merge(width, map(f, chop(width, input)))
+
+applyFilterF(fsignal filter, interval input) -> interval =
+    (interval with input.start, input.stop, ft with ft(input) * filter)
+
+# library functions
+#merge(seconds width, [interval] slices) -> signal
+#chop(seconds width, signal input) -> [interval]
+#ft(signal in) -> fsignal
+#ft(fsignal in) -> signal
+#map((a) -> b, [a]) -> [b]
+
+# constructor
+# interval(seconds start, seconds stop, signal input) -> interval

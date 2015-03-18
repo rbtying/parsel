@@ -10,4 +10,5 @@ main = do
   let tokens = AlexToken.scanTokens input
   putStrLn $ "Tokens: " ++ (show tokens)
   putStrLn $ "\nUsing Happy"
-  -- runEvalWith HappyParser.parse tokens
+  let parse = HappyParser.parse tokens
+  putStrLn $ (show parse)

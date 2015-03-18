@@ -1,0 +1,4 @@
+main(signal sysin) -> signal = 10
+name(signal sysin, fsignal other) -> fsignal = 1 + 1
+
+intervalMap(other(interval, seconds) -> interval, signal input) -> signal = 1

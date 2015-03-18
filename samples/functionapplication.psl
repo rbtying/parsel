@@ -1,0 +1,2 @@
+intervalMap(10ms, filterInterval, sysin)
+merge(f, 1)
