@@ -1,6 +1,7 @@
 #include "Signal.h"
 
 #include <sndfile.hh>
+#include <memory>
 
 using namespace psl;
 
@@ -22,11 +23,21 @@ fill_t Signal::fillFromFile(std::string filename)
 {
     SndfileHandle file(filename);
 
-    std::vector<short> fileData(file.channels() * file.frames());
-    file.read(fileData.data(), fileData.size());
+    auto fileDataP = std::shared_ptr<std::vector<short>>(
+            new std::vector<short>(file.channels() * file.frames()));
+    file.read(fileDataP->data(), fileDataP->size());
 
-    int pos = 0;
-    return [fileData, pos](buffer_t& buffer) {
-        // fill fileData from buffer
+    auto posP = std::shared_ptr<int>(0);
+    int channels = file.channels();
+    return [channels, fileDataP, posP](buffer_t& buffer) {
+
+        // fill buffer from fileDataP
+        int stopPos = std::min(buffer.size(), fileDataP->size() - *posP);
+        for(int i = 0; i < stopPos; i++)
+            buffer[i] = std::vector<std::complex<double>>(channels,
+                    fileDataP->at(i + *posP));
+        *posP += stopPos;
+        for(int i = stopPos; i < buffer.size(); i++)
+            buffer[i] = std::vector<std::complex<double>>(channels, 0);
     };
 }
