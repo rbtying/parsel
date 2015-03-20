@@ -13,9 +13,8 @@ int main(int argc, char **argv)
         std::exit(1);
     }
     psl::Signal insignal((std::string(argv[1])));
-    psl::fill_t wavFill(psl::toWavFile(&insignal, "output.wav", 5));
-    
-    psl::Signal outsignal(wavFill,
+
+    psl::Signal outsignal(psl::toWavFile(&insignal, "output.wav", 5),
             insignal.sampleRate(), insignal.channels());
 
     // main loop
