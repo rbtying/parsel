@@ -3,7 +3,7 @@
 #include <cstdlib>
 
 #include "fft4g.c"
-#include "Signal.h"
+#include "outputs.h"
 
 int main(int argc, char **argv)
 {
@@ -12,5 +12,6 @@ int main(int argc, char **argv)
         std::cout << "Give a file please\n";
         std::exit(1);
     }
-    psl::Signal(std::string(argv[1]));
+    psl::Signal signal((std::string(argv[1])));
+    psl::toWavFile(signal);
 }

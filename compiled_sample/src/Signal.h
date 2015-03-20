@@ -1,8 +1,8 @@
+#pragma once
 // fun facts
 // sample rate will be global to program
 
 #include <vector>
-#include <tuple>
 #include <complex>
 #include <functional>
 
