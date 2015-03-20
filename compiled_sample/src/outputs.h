@@ -1,7 +1,11 @@
 #pragma once
+
+#include "SigFunc.h"
 #include "Signal.h"
+
+#include <functional>
 
 namespace psl
 {
-    void toWavFile(const Signal& signal);
+    fill_t toWavFile(Signal* signalP, std::string filepath, float seconds);
 }

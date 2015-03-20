@@ -12,6 +12,14 @@ int main(int argc, char **argv)
         std::cout << "Give a file please\n";
         std::exit(1);
     }
-    psl::Signal signal((std::string(argv[1])));
-    psl::toWavFile(signal);
+    psl::Signal insignal((std::string(argv[1])));
+    psl::fill_t wavFill(psl::toWavFile(&insignal, "output.wav", 5));
+    
+    psl::Signal outsignal(wavFill,
+            insignal.sampleRate(), insignal.channels());
+
+    // main loop
+    bool B = true;
+    while(outsignal.fillBuffer(B))
+        B = !B;
 }

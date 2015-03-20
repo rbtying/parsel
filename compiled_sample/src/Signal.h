@@ -1,30 +1,40 @@
 #pragma once
-// fun facts
-// sample rate will be global to program
 
 #include <vector>
 #include <complex>
 #include <functional>
 
+// forward declaration
+class SndfileHandle;
+
 namespace psl
 {
     typedef std::vector<std::complex<double>> sample_t;
     typedef std::vector<sample_t> buffer_t;
-    typedef std::function<void(buffer_t&)> fill_t;
+
+    // returns false if unable to continue filling
+    typedef std::function<bool(buffer_t*, bool)> fill_t;
 
     class Signal
     {
     public:
-        Signal(std::string filename);
-        Signal(fill_t fill);
+        Signal(std::string filepath);
+        Signal(fill_t fill, int sampleRate, int channels);
 
-        void fillBuffer();
+        bool fillBuffer(bool B);
+
+        int sampleRate() const;
+        int channels() const;
 
         fill_t fill_;
-        double sampleRate_;
         buffer_t buffer_;
+        
 
     private:
-        static fill_t fillFromFile(std::string filename);
+        Signal(SndfileHandle& file);
+        static fill_t fillFromFile(SndfileHandle& file);
+
+        bool cacheB_, firstRun_, more_;
+        int sampleRate_, channels_;
     };
 }

@@ -2,7 +2,7 @@ COMMAND = mkdir -p bin; mkdir -p obj; g++-4.9 -std=c++14
 LINK_ARGS = -Llib -lsndfile
 INC_ARGS = -Iinclude
 
-bin/sample: src/fft4g.c obj/sample.o obj/outputs.o obj/Signal.o
+bin/sample: src/fft4g.c obj/sample.o obj/outputs.o obj/Signal.o obj/Function.o obj/SigFunc.o
 	$(COMMAND) obj/* -o bin/sample $(LINK_ARGS)
 
 obj/sample.o: src/sample.cpp src/outputs.h src/fft4g.c
@@ -13,6 +13,12 @@ obj/outputs.o: src/outputs.cpp src/outputs.h src/Signal.h
 
 obj/Signal.o: src/Signal.cpp src/Signal.h
 	$(COMMAND) $(INC_ARGS) -c src/Signal.cpp -o obj/Signal.o
+
+obj/Function.o: src/Function.cpp src/Function.h
+	$(COMMAND) $(INC_ARGS) -c src/Function.cpp -o obj/Function.o
+
+obj/SigFunc.o: src/SigFunc.cpp src/SigFunc.h
+	$(COMMAND) $(INC_ARGS) -c src/SigFunc.cpp -o obj/SigFunc.o
 
 clean:
 	rm -f obj/*
