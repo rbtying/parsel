@@ -41,7 +41,13 @@ import AST
 %left '*' '/'
 %%
 
-AST : Exprs                                         { Tuple $1 }
+AST : Defs                                          { $1 }
+
+Defs : Def                                          { [$1] }
+     | Defs Def                                     { $2 : $1 }
+
+Def : Symbol '(' Tsyms ')' '->' Type '=' Expr       { FuncDef $1 $3 $6 $8 }
+    | Symbol '=' Expr                               { VarDef $1 $3 }
 
 Exprs : Expr                                        { [$1] }
       | Exprs Expr                                  { $2 : $1 }
@@ -52,34 +58,29 @@ Expr : Literal                                      { $1 }
      | '[' Args ']'                                 { List $2 }
      | Op                                           { $1 }
      | Symbol                                       { Var $1 }
-     | Func                                         { $1 }
      | ApplyFunc                                    { $1 }
+     | Lambda                                       { $1 }
      | LetExp                                       { $1 }
-     | WithExp                                      { $1 }
      | if Expr then Expr else Expr                  { Cond $2 $4 $6 }
-     | if Expr then Expr                            { Cond $2 $4 Nop }
-     | unless Expr then Expr                        { Cond $2 Nop $4 }
 
-LetExp : let Symbol '=' Expr in Expr                { Let $2 $4 $6 }
+LetExp : let Defs in Expr                           { LetExp $2 $4 }
 
-WithExp : Symbol with Args                          { Apply $1 $3 }
-
-ApplyFunc : Symbol '(' Args ')'                     { Apply $1 $3 }
+ApplyFunc : Symbol '(' Args ')'                     { Func $1 $3 }
+          | Symbol with Args                        { Func $1 $3 }
 
 Args : Expr                                         { [$1] }
      | Args ',' Expr                                { $3 : $1 }
 
-Func : Symbol '(' Tsyms ')' '->' Type '=' Expr      { Func $1 $3 $6 $8 }
-     | '\\' '(' Tsyms ')' '->' Type '=' Expr        { Lambda $3 $6 $8 }
+Lambda : '\\' '(' Tsyms ')' '->' Type '=' Expr      { Lambda $3 $6 $8 }
 
 Tsyms : Tsym                                        { [$1] }
       | Tsyms ',' Tsym                              { $3 : $1 }
 
-Tsym : Type Symbol                                  { TypedSymbol $1 $2 }
-     | Symbol FType                                 { TypedSymbol $2 $1 }
+Tsym : Type Symbol                                  { Tsym $1 $2 }
+     | Symbol FType                                 { Tsym $2 $1 }
 
 Types : Type                                        { [$1] }
-      | Types ',' Type                                  { $3 : $1 }
+      | Types ',' Type                              { $3 : $1 }
 
 Type : Symbol                                       { Type $1 }
      | '[' Symbol ']'                               { ListType $2 }
@@ -89,24 +90,24 @@ FType : '(' Types ')' '->' Type                     { FuncType $2 $5 }
 
 Symbol : sym                                        { Symbol $1 }
 
-Op   : Expr '+' Expr                                { BinaryOp AddOp $1 $3 }
-     | Expr '-' Expr                                { BinaryOp SubOp $1 $3 }
-     | Expr '/' Expr                                { BinaryOp DivOp $1 $3 }
-     | Expr '*' Expr                                { BinaryOp MulOp $1 $3 }
-     | Expr '=' '=' Expr                            { BinaryOp EqOp $1 $4 }
-     | Expr '<' Expr                                { BinaryOp LessThanOp $1 $3 }
-     | Expr '>' Expr                                { BinaryOp GreaterThanOp $1 $3 }
-     | Expr '<' '=' Expr                            { BinaryOp LessThanEqOp $1 $4 }
-     | Expr '>' '=' Expr                            { BinaryOp GreaterThanEqOp $1 $4 }
-     | Expr '!' '=' Expr                            { UnaryOp NegateOp (BinaryOp EqOp $1 $4) }
-     | '!' Expr                                     { UnaryOp NegateOp $2 }
+Op   : Expr '+' Expr                                { BinaryOp Plus $1 $3 }
+     | Expr '-' Expr                                { BinaryOp Minus $1 $3 }
+     | Expr '/' Expr                                { BinaryOp Divide $1 $3 }
+     | Expr '*' Expr                                { BinaryOp Multiply $1 $3 }
+     | Expr '=' '=' Expr                            { BinaryOp Eq $1 $4 }
+     | Expr '<' Expr                                { BinaryOp LessThan $1 $3 }
+     | Expr '>' Expr                                { BinaryOp GreaterThan $1 $3 }
+     | Expr '<' '=' Expr                            { BinaryOp LessThanEq $1 $4 }
+     | Expr '>' '=' Expr                            { BinaryOp GreaterThanEq $1 $4 }
+     | Expr '!' '=' Expr                            { UnaryOp Negate (BinaryOp Eq $1 $4) }
+     | '!' Expr                                     { UnaryOp Negate $2 }
 
-Literal : num unit                                  { Literal $2 (Value $1) }
-        | num                                       { Literal "" (Value $1) }
-        | '-' num                                   { UnaryOp NegateOp (Literal "" (Value $2)) }
-        | '-' num unit                              { UnaryOp NegateOp (Literal $3 (Value $2)) }
+Literal : num unit                                  { Literal $1 $2 }
+        | num                                       { Literal $1 "" }
+        | '-' num unit                              { UnaryOp Negate (Literal $2 $3) }
+        | '-' num                                   { UnaryOp Negate (Literal $2 "") }
 
 {
 parseError :: [Token] -> a
-parseError _ = error "Parse error"
+parseError x = error $ "Parse error: " ++ (show x)
 }

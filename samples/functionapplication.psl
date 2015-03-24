@@ -1,2 +1,2 @@
-intervalMap(10ms, filterInterval, sysin)
-merge(f, 1)
+c = intervalMap(10ms, filterInterval, sysin)
+d = merge(f, 1)

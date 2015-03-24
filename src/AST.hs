@@ -1,44 +1,51 @@
 module AST where
 
-data AST              = Tuple [AST]
-                      | Attr AST Symbol
-                      | List [AST]
-                      | Let Symbol AST AST
-                      | Apply Symbol [AST]
-                      | Func Symbol [TypedSymbol] Type AST
-                      | Lambda [TypedSymbol] Type AST
-                      | Literal String Value
-                      | Var Symbol
-                      | BinaryOp BinOp AST AST
-                      | UnaryOp UnOp AST
-                      | Cond AST AST AST
-                      | Nop
-                      deriving (Show, Eq)
+type Defs       = [Def]
 
-data BinOp            = AddOp
-                      | SubOp
-                      | MulOp
-                      | DivOp
-                      | LessThanOp
-                      | LessThanEqOp
-                      | GreaterThanOp
-                      | GreaterThanEqOp
-                      | EqOp
-                      deriving (Show, Eq)
 
-data UnOp             = NegateOp
-                      | NullOp
-                      deriving (Show, Eq)
+data Def        = FuncDef Symbol Tsyms Type Expr
+                | VarDef Symbol Expr
+                deriving (Show)
 
-data TypedSymbol      = TypedSymbol Type Symbol
-                      deriving (Show, Eq)
+data Symbol     = Symbol String
+                deriving (Show, Eq)
 
-data Type             = Type Symbol
-                      | ListType Symbol
-                      | FuncType [Type] Type
-                      deriving (Show, Eq)
+data Expr       = Literal Float Unit
+                | Attr Expr Symbol
+                | Tuple Exprs
+                | List Exprs
+                | BinaryOp BinOp Expr Expr
+                | UnaryOp UnOp Expr
+                | Func Symbol Exprs
+                | Var Symbol
+                | Lambda Tsyms Type Expr
+                | LetExp Defs Expr
+                | Cond Expr Expr Expr
+                deriving (Show)
 
-data Symbol           = Symbol String
-                      deriving (Show, Eq)
-data Value            = Value Float
-                      deriving (Show, Eq)
+type Unit       = String
+type Exprs      = [Expr]
+
+data BinOp      = Plus
+                | Minus
+                | Divide
+                | Multiply
+                | LessThan
+                | GreaterThan
+                | LessThanEq
+                | GreaterThanEq
+                | Eq
+                deriving (Show, Eq)
+
+data UnOp       = Negate
+                deriving (Show, Eq)
+
+type Tsyms      = [Tsym]
+
+data Tsym       = Tsym Type Symbol
+                deriving (Show, Eq)
+
+data Type       = Type Symbol
+                | ListType Symbol
+                | FuncType [Type] Type
+                deriving (Show, Eq)

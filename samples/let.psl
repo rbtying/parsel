@@ -1,2 +1,1 @@
-let a = b in
-    applyFilterF(a)
+c = let a = b in applyFilterF(a)

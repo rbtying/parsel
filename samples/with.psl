@@ -1,1 +1,1 @@
-applyFilterF with a, b, c
+f(float a) -> float = applyFilterF with a, b, c
