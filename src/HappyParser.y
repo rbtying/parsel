@@ -16,8 +16,13 @@ import AST
     if                            { TokenIf _ }
     else                          { TokenElse _ }
     then                          { TokenThen _ }
-    unless                        { TokenUnless _ }
     '->'                          { TokenArrow _ }
+    and                           { TokenAnd _ }
+    or                            { TokenOr _ }
+    '<='                          { TokenLessThanEq _ }
+    '>='                          { TokenGreaterThanEq _ }
+    '!='                          { TokenNotEq _ }
+    '=='                          { TokenEqEq _ }
     ','                           { TokenComma _ }
     '.'                           { TokenDot _ }
     '='                           { TokenEq _ }
@@ -37,8 +42,13 @@ import AST
     unit                          { TokenUnit _ $$ }
     sym                           { TokenSym _ $$ }
 
+%left with
+%left ','
+%left and or
+%left '<' '>' '<=' '>=' '!=' '=='
 %left '+' '-'
 %left '*' '/'
+%right '!'
 %%
 
 AST : Defs                                          { $1 }
@@ -49,19 +59,16 @@ Defs : Def                                          { [$1] }
 Def : Symbol '(' Tsyms ')' '->' Type '=' Expr       { FuncDef $1 $3 $6 $8 }
     | Symbol '=' Expr                               { VarDef $1 $3 }
 
-Exprs : Expr                                        { [$1] }
-      | Exprs Expr                                  { $2 : $1 }
-
 Expr : Literal                                      { $1 }
      | Expr '.' Symbol                              { Attr $1 $3 }
      | '(' Args ')'                                 { Tuple $2 }
      | '[' Args ']'                                 { List $2 }
-     | Op                                           { $1 }
      | Symbol                                       { Var $1 }
      | ApplyFunc                                    { $1 }
      | Lambda                                       { $1 }
      | LetExp                                       { $1 }
      | if Expr then Expr else Expr                  { Cond $2 $4 $6 }
+     | Op                                           { $1 }
 
 LetExp : let Defs in Expr                           { LetExp $2 $4 }
 
@@ -69,7 +76,7 @@ ApplyFunc : Symbol '(' Args ')'                     { Func $1 $3 }
           | Symbol with Args                        { Func $1 $3 }
 
 Args : Expr                                         { [$1] }
-     | Args ',' Expr                                { $3 : $1 }
+     | Args ',' Expr                                { $3 : $1 } 
 
 Lambda : '\\' '(' Tsyms ')' '->' Type '=' Expr      { Lambda $3 $6 $8 }
 
@@ -94,12 +101,14 @@ Op   : Expr '+' Expr                                { BinaryOp Plus $1 $3 }
      | Expr '-' Expr                                { BinaryOp Minus $1 $3 }
      | Expr '/' Expr                                { BinaryOp Divide $1 $3 }
      | Expr '*' Expr                                { BinaryOp Multiply $1 $3 }
-     | Expr '=' '=' Expr                            { BinaryOp Eq $1 $4 }
+     | Expr '==' Expr                               { BinaryOp Eq $1 $3 }
      | Expr '<' Expr                                { BinaryOp LessThan $1 $3 }
      | Expr '>' Expr                                { BinaryOp GreaterThan $1 $3 }
-     | Expr '<' '=' Expr                            { BinaryOp LessThanEq $1 $4 }
-     | Expr '>' '=' Expr                            { BinaryOp GreaterThanEq $1 $4 }
-     | Expr '!' '=' Expr                            { UnaryOp Negate (BinaryOp Eq $1 $4) }
+     | Expr '<=' Expr                               { BinaryOp LessThanEq $1 $3 }
+     | Expr '>=' Expr                               { BinaryOp GreaterThanEq $1 $3 }
+     | Expr and Expr                                { BinaryOp And $1 $3 }
+     | Expr or Expr                                 { BinaryOp Or $1 $3 }
+     | Expr '!=' Expr                               { UnaryOp Negate (BinaryOp Eq $1 $3) }
      | '!' Expr                                     { UnaryOp Negate $2 }
 
 Literal : num unit                                  { Literal $1 $2 }

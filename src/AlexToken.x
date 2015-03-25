@@ -20,17 +20,22 @@ tokens :-
   if                            { tok (\p s -> TokenIf p) }
   else                          { tok (\p s -> TokenElse p) }
   then                          { tok (\p s -> TokenThen p) }
-  unless                        { tok (\p s -> TokenUnless p) }
   "->"                          { tok (\p s -> TokenArrow p) }
+  and                           { tok (\p s -> TokenAnd p) }
+  or                            { tok (\p s -> TokenOr p) }
+  "<="                          { tok (\p s -> TokenLessThanEq p) }
+  ">="                          { tok (\p s -> TokenGreaterThanEq p) }
+  "!="                          { tok (\p s -> TokenNotEq p) }
+  "=="                          { tok (\p s -> TokenEqEq p) }
   \=                            { tok (\p s -> TokenEq p) }
   \\                            { tok (\p s -> TokenLambda p) }
-  [\!]                          { tok (\p s -> TokenNot p) }
-  [\+]                          { tok (\p s -> TokenAdd p) }
-  [\-]                          { tok (\p s -> TokenSub p) }
-  [\*]                          { tok (\p s -> TokenMul p) }
-  [\/]                          { tok (\p s -> TokenDiv p) }
-  [\<]                          { tok (\p s -> TokenLessThan p) }
-  [\>]                          { tok (\p s -> TokenGreaterThan p) }
+  \!                            { tok (\p s -> TokenNot p) }
+  \+                            { tok (\p s -> TokenAdd p) }
+  \-                            { tok (\p s -> TokenSub p) }
+  \*                            { tok (\p s -> TokenMul p) }
+  \/                            { tok (\p s -> TokenDiv p) }
+  \<                            { tok (\p s -> TokenLessThan p) }
+  \>                            { tok (\p s -> TokenGreaterThan p) }
   \[                            { tok (\p s -> TokenLBracket p) }
   \]                            { tok (\p s -> TokenRBracket p) }
   \(                            { tok (\p s -> TokenLParen p) }
@@ -54,6 +59,12 @@ data Token = TokenLet AlexPosn
            | TokenUnless AlexPosn
            | TokenLambda AlexPosn
            | TokenArrow AlexPosn
+           | TokenAnd AlexPosn
+           | TokenOr AlexPosn
+           | TokenLessThanEq AlexPosn
+           | TokenGreaterThanEq AlexPosn
+           | TokenNotEq AlexPosn
+           | TokenEqEq AlexPosn
            | TokenEq AlexPosn
            | TokenAdd AlexPosn
            | TokenSub AlexPosn
@@ -84,6 +95,12 @@ token_posn (TokenThen p) = p
 token_posn (TokenUnless p) = p
 token_posn (TokenLambda p) = p
 token_posn (TokenArrow p) = p
+token_posn (TokenAnd p) = p
+token_posn (TokenOr p) = p
+token_posn (TokenLessThanEq p) = p
+token_posn (TokenGreaterThanEq p) = p
+token_posn (TokenNotEq p) = p
+token_posn (TokenEqEq p) = p
 token_posn (TokenEq p) = p
 token_posn (TokenAdd p) = p
 token_posn (TokenSub p) = p

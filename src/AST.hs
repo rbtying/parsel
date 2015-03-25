@@ -12,11 +12,11 @@ data Symbol     = Symbol String
 
 data Expr       = Literal Float Unit
                 | Attr Expr Symbol
-                | Tuple Exprs
-                | List Exprs
+                | Tuple Args
+                | List Args
                 | BinaryOp BinOp Expr Expr
                 | UnaryOp UnOp Expr
-                | Func Symbol Exprs
+                | Func Symbol Args
                 | Var Symbol
                 | Lambda Tsyms Type Expr
                 | LetExp Defs Expr
@@ -24,7 +24,7 @@ data Expr       = Literal Float Unit
                 deriving (Show)
 
 type Unit       = String
-type Exprs      = [Expr]
+type Args       = [Expr]
 
 data BinOp      = Plus
                 | Minus
@@ -35,6 +35,8 @@ data BinOp      = Plus
                 | LessThanEq
                 | GreaterThanEq
                 | Eq
+                | And
+                | Or
                 deriving (Show, Eq)
 
 data UnOp       = Negate
