@@ -42,6 +42,7 @@ import AST
     unit                          { TokenUnit _ $$ }
     sym                           { TokenSym _ $$ }
 
+%left in
 %left with
 %left ','
 %left and or
@@ -57,7 +58,9 @@ Defs : Def                                          { [$1] }
      | Defs Def                                     { $2 : $1 }
 
 Def : Symbol '(' Tsyms ')' '->' Type '=' Expr       { FuncDef $1 $3 $6 $8 }
-    | Symbol '=' Expr                               { VarDef $1 $3 }
+    | Type Symbol '=' Expr                          { VarDef $1 $3 }
+
+Struct : struct Symbol '(' Tsyms ')'
 
 Expr : Literal                                      { $1 }
      | Expr '.' Symbol                              { Attr $1 $3 }
