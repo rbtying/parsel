@@ -6,6 +6,8 @@
 /* For signal-independent functions
  */
 
+// TODO: Cache is bad! Same call can have different values. Signal should cache things itself.
+
 namespace psl
 {
     template<class R, class... Args>
