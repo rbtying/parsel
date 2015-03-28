@@ -10,6 +10,7 @@ import AST
 %error { parseError }
 
 %token
+    struct                        { TokenStruct _ }
     let                           { TokenLet _ }
     with                          { TokenWith _ }
     in                            { TokenIn _ }
@@ -36,12 +37,17 @@ import AST
     '!'                           { TokenNot _ }
     '['                           { TokenLBracket _ }
     ']'                           { TokenRBracket _ }
+    '{'                           { TokenLBrace _ }
+    '}'                           { TokenRBrace _ }
     '('                           { TokenLParen _ }
     ')'                           { TokenRParen _ }
     num                           { TokenNum _ $$ }
     unit                          { TokenUnit _ $$ }
     sym                           { TokenSym _ $$ }
 
+%right '='
+%left '(' ')' '{' '}'
+%left if else then
 %left in
 %left with
 %left ','
@@ -50,6 +56,7 @@ import AST
 %left '+' '-'
 %left '*' '/'
 %right '!'
+%left '.'
 %%
 
 AST : Defs                                          { $1 }
@@ -58,14 +65,14 @@ Defs : Def                                          { [$1] }
      | Defs Def                                     { $2 : $1 }
 
 Def : Symbol '(' Tsyms ')' '->' Type '=' Expr       { FuncDef $1 $3 $6 $8 }
-    | Type Symbol '=' Expr                          { VarDef $1 $3 }
-
-Struct : struct Symbol '(' Tsyms ')'
+    | Tsym '=' Expr                                 { VarDef $1 $3 }
+    | struct Symbol '(' Tsyms ')'                   { Struct $2 $4 }
 
 Expr : Literal                                      { $1 }
      | Expr '.' Symbol                              { Attr $1 $3 }
      | '(' Args ')'                                 { Tuple $2 }
      | '[' Args ']'                                 { List $2 }
+     | Expr '{' Expr '}'                            { Index $1 $3 }
      | Symbol                                       { Var $1 }
      | ApplyFunc                                    { $1 }
      | Lambda                                       { $1 }
@@ -78,7 +85,7 @@ LetExp : let Defs in Expr                           { LetExp $2 $4 }
 ApplyFunc : Symbol '(' Args ')'                     { Func $1 $3 }
           | Symbol with Args                        { Func $1 $3 }
 
-Args : Expr                                         { [$1] }
+Args : Expr %prec ','                               { [$1] }
      | Args ',' Expr                                { $3 : $1 } 
 
 Lambda : '\\' '(' Tsyms ')' '->' Type '=' Expr      { Lambda $3 $6 $8 }
@@ -86,17 +93,18 @@ Lambda : '\\' '(' Tsyms ')' '->' Type '=' Expr      { Lambda $3 $6 $8 }
 Tsyms : Tsym                                        { [$1] }
       | Tsyms ',' Tsym                              { $3 : $1 }
 
-Tsym : Type Symbol                                  { Tsym $1 $2 }
-     | Symbol FType                                 { Tsym $2 $1 }
+Tsym : Symbol Symbol                                { Tsym (Type $1) $2 }
+     | Symbol '(' Types ')' '->' Type               { Tsym (FuncType $3 $6) $1 }
+     | Symbol '(' Types ')'                         { Tsym (TupleType $3) $1 }
+     | Symbol '[' Type ']'                          { Tsym (ListType $3) $1 }
 
 Types : Type                                        { [$1] }
       | Types ',' Type                              { $3 : $1 }
 
 Type : Symbol                                       { Type $1 }
-     | '[' Symbol ']'                               { ListType $2 }
-     | FType                                        { $1 }
-
-FType : '(' Types ')' '->' Type                     { FuncType $2 $5 }
+     | '[' Type ']'                                 { ListType $2 }
+     | '(' Types ')'                                { TupleType $2 }
+     | '(' Types ')' '->' Type                      { FuncType $2 $5 }
 
 Symbol : sym                                        { Symbol $1 }
 

@@ -4,7 +4,8 @@ type Defs       = [Def]
 
 
 data Def        = FuncDef Symbol Tsyms Type Expr
-                | VarDef Symbol Expr
+                | VarDef Tsym Expr
+                | Struct Symbol Tsyms
                 deriving (Show)
 
 data Symbol     = Symbol String
@@ -14,6 +15,7 @@ data Expr       = Literal Float Unit
                 | Attr Expr Symbol
                 | Tuple Args
                 | List Args
+                | Index Expr Expr
                 | BinaryOp BinOp Expr Expr
                 | UnaryOp UnOp Expr
                 | Func Symbol Args
@@ -48,6 +50,7 @@ data Tsym       = Tsym Type Symbol
                 deriving (Show, Eq)
 
 data Type       = Type Symbol
-                | ListType Symbol
+                | ListType Type
+                | TupleType [Type]
                 | FuncType [Type] Type
                 deriving (Show, Eq)

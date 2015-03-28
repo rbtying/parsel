@@ -11,9 +11,10 @@ $eol   = [\n]
 
 tokens :-
 
-  $eol                          ;
-  $white+                       ;
   "#".*                         ;
+  $white+                       ;
+  $eol+                         ;
+  struct                        { tok (\p s -> TokenStruct p) }
   let                           { tok (\p s -> TokenLet p) }
   with                          { tok (\p s -> TokenWith p) }
   in                            { tok (\p s -> TokenIn p) }
@@ -38,6 +39,8 @@ tokens :-
   \>                            { tok (\p s -> TokenGreaterThan p) }
   \[                            { tok (\p s -> TokenLBracket p) }
   \]                            { tok (\p s -> TokenRBracket p) }
+  \{                            { tok (\p s -> TokenLBrace p) }
+  \}                            { tok (\p s -> TokenRBrace p) }
   \(                            { tok (\p s -> TokenLParen p) }
   \)                            { tok (\p s -> TokenRParen p) }
   [KMmu]?(Hz|s|min|hour)        { tok (\p s -> TokenUnit p s) }
@@ -50,7 +53,8 @@ tokens :-
 
 tok f p s = f p s
 
-data Token = TokenLet AlexPosn
+data Token = TokenStruct AlexPosn
+           | TokenLet AlexPosn
            | TokenWith AlexPosn
            | TokenIn AlexPosn
            | TokenIf AlexPosn
@@ -78,6 +82,8 @@ data Token = TokenLet AlexPosn
            | TokenRParen AlexPosn
            | TokenLBracket AlexPosn
            | TokenRBracket AlexPosn
+           | TokenLBrace AlexPosn
+           | TokenRBrace AlexPosn
            | TokenUnit AlexPosn String
            | TokenNum AlexPosn Float
            | TokenSym AlexPosn String
@@ -86,6 +92,7 @@ data Token = TokenLet AlexPosn
 
 scanTokens = alexScanTokens
 
+token_posn (TokenStruct p) = p
 token_posn (TokenLet p) = p
 token_posn (TokenWith p) = p
 token_posn (TokenIn p) =  p
@@ -114,6 +121,8 @@ token_posn (TokenLParen p) = p
 token_posn (TokenRParen p) = p
 token_posn (TokenLBracket p) = p
 token_posn (TokenRBracket p) = p
+token_posn (TokenLBrace p) = p
+token_posn (TokenRBrace p) = p
 token_posn (TokenUnit p _) = p
 token_posn (TokenSym p _) = p
 token_posn (TokenNum p _) = p

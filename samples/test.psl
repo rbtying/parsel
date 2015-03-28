@@ -1,1 +1,4 @@
-f(int a, int c, int b) -> int = a + c + b
+int a = b
+a[int] = [3, 4]
+c(int, float) = d
+c(int a, float b) -> float = a + b
