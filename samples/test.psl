@@ -1,4 +1,6 @@
-int a = b
-a[int] = [3, 4]
-c(int, float) = d
-c(int a, float b) -> float = a + b
+main(signal input) -> (signal) =
+    let x[int] = [3, 4]
+        int a = x \at\ 3
+    in input * a
+
+map with at(x, int), [3, 4, 1]

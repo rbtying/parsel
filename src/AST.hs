@@ -13,20 +13,20 @@ data Symbol     = Symbol String
 
 data Expr       = Literal Float Unit
                 | Attr Expr Symbol
-                | Tuple Args
-                | List Args
+                | Tuple [Expr]
+                | List [Expr]
                 | Index Expr Expr
                 | BinaryOp BinOp Expr Expr
                 | UnaryOp UnOp Expr
-                | Func Symbol Args
+                | Func Expr [Expr]
                 | Var Symbol
                 | Lambda Tsyms Type Expr
                 | LetExp Defs Expr
                 | Cond Expr Expr Expr
+                | TypeExpr Type
                 deriving (Show)
 
 type Unit       = String
-type Args       = [Expr]
 
 data BinOp      = Plus
                 | Minus

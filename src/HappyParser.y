@@ -37,8 +37,6 @@ import AST
     '!'                           { TokenNot _ }
     '['                           { TokenLBracket _ }
     ']'                           { TokenRBracket _ }
-    '{'                           { TokenLBrace _ }
-    '}'                           { TokenRBrace _ }
     '('                           { TokenLParen _ }
     ')'                           { TokenRParen _ }
     num                           { TokenNum _ $$ }
@@ -49,7 +47,7 @@ import AST
 %left '(' ')' '{' '}'
 %left if else then
 %left in
-%left with
+%left with '\\'
 %left ','
 %left and or
 %left '<' '>' '<=' '>=' '!=' '=='
@@ -68,11 +66,13 @@ Def : Symbol '(' Tsyms ')' '->' Type '=' Expr       { FuncDef $1 $3 $6 $8 }
     | Tsym '=' Expr                                 { VarDef $1 $3 }
     | struct Symbol '(' Tsyms ')'                   { Struct $2 $4 }
 
+Exprs : Expr %prec ','                              { [$1] }
+      | Exprs ',' Expr                              { $3 : $1 }
+
 Expr : Literal                                      { $1 }
      | Expr '.' Symbol                              { Attr $1 $3 }
-     | '(' Args ')'                                 { Tuple $2 }
-     | '[' Args ']'                                 { List $2 }
-     | Expr '{' Expr '}'                            { Index $1 $3 }
+     | '(' Exprs ')'                                { Tuple $2 }
+     | '[' Exprs ']'                                { List $2 }
      | Symbol                                       { Var $1 }
      | ApplyFunc                                    { $1 }
      | Lambda                                       { $1 }
@@ -82,11 +82,8 @@ Expr : Literal                                      { $1 }
 
 LetExp : let Defs in Expr                           { LetExp $2 $4 }
 
-ApplyFunc : Symbol '(' Args ')'                     { Func $1 $3 }
-          | Symbol with Args                        { Func $1 $3 }
-
-Args : Expr %prec ','                               { [$1] }
-     | Args ',' Expr                                { $3 : $1 } 
+ApplyFunc : Expr '(' Exprs ')'                      { Func $1 $3 }
+          | Expr with Exprs                         { Func $1 $3 }
 
 Lambda : '\\' '(' Tsyms ')' '->' Type '=' Expr      { Lambda $3 $6 $8 }
 

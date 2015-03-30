@@ -39,8 +39,6 @@ tokens :-
   \>                            { tok (\p s -> TokenGreaterThan p) }
   \[                            { tok (\p s -> TokenLBracket p) }
   \]                            { tok (\p s -> TokenRBracket p) }
-  \{                            { tok (\p s -> TokenLBrace p) }
-  \}                            { tok (\p s -> TokenRBrace p) }
   \(                            { tok (\p s -> TokenLParen p) }
   \)                            { tok (\p s -> TokenRParen p) }
   [KMmu]?(Hz|s|min|hour)        { tok (\p s -> TokenUnit p s) }
@@ -82,8 +80,6 @@ data Token = TokenStruct AlexPosn
            | TokenRParen AlexPosn
            | TokenLBracket AlexPosn
            | TokenRBracket AlexPosn
-           | TokenLBrace AlexPosn
-           | TokenRBrace AlexPosn
            | TokenUnit AlexPosn String
            | TokenNum AlexPosn Float
            | TokenSym AlexPosn String
@@ -121,8 +117,6 @@ token_posn (TokenLParen p) = p
 token_posn (TokenRParen p) = p
 token_posn (TokenLBracket p) = p
 token_posn (TokenRBracket p) = p
-token_posn (TokenLBrace p) = p
-token_posn (TokenRBrace p) = p
 token_posn (TokenUnit p _) = p
 token_posn (TokenSym p _) = p
 token_posn (TokenNum p _) = p
