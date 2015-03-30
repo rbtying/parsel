@@ -84,6 +84,7 @@ LetExp : let Defs in Expr                           { LetExp $2 $4 }
 
 ApplyFunc : Expr '(' Exprs ')'                      { Func $1 $3 }
           | Expr with Exprs                         { Func $1 $3 }
+          | Expr '\\' Symbol '\\' Expr              { Func (Var $3) [$1, $5] }
 
 Lambda : '\\' '(' Tsyms ')' '->' Type '=' Expr      { Lambda $3 $6 $8 }
 
