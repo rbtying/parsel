@@ -1,6 +1,5 @@
 #pragma once
 
-#include "SigFunc.h"
 #include "Signal.h"
 
 #include <functional>
