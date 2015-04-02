@@ -1,6 +1,6 @@
 module AST where
 
-type Defs       = [Def]
+type AST        = [Def]
 
 
 data Def        = FuncDef Symbol Tsyms Type Expr
@@ -21,7 +21,7 @@ data Expr       = Literal Float Unit
                 | Func Expr [Expr]
                 | Var Symbol
                 | Lambda Tsyms Type Expr
-                | LetExp Defs Expr
+                | LetExp [Def] Expr
                 | Cond Expr Expr Expr
                 | TypeExpr Type
                 deriving (Show)

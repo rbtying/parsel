@@ -3,4 +3,4 @@ main(signal input) -> (signal) =
         int a = x \at\ 3
     in input * a
 
-map with at(x, int), [3, 4, 1]
+int a = map with at(x, int), [3, 4, 1]

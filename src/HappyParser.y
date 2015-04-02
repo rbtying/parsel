@@ -44,10 +44,12 @@ import AST
     sym                           { TokenSym _ $$ }
 
 %right '='
-%left '(' ')' '{' '}'
 %left if else then
 %left in
-%left with '\\'
+%left expr
+%right '\\'
+%right with
+%left '('
 %left ','
 %left and or
 %left '<' '>' '<=' '>=' '!=' '=='
@@ -66,7 +68,7 @@ Def : Symbol '(' Tsyms ')' '->' Type '=' Expr       { FuncDef $1 $3 $6 $8 }
     | Tsym '=' Expr                                 { VarDef $1 $3 }
     | struct Symbol '(' Tsyms ')'                   { Struct $2 $4 }
 
-Exprs : Expr %prec ','                              { [$1] }
+Exprs : Expr %prec expr                             { [$1] }
       | Exprs ',' Expr                              { $3 : $1 }
 
 Expr : Literal                                      { $1 }
