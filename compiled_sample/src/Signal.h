@@ -25,6 +25,13 @@ namespace psl
 
         int sampleRate() const;
         int channels() const;
+	
+	// Arithmetic Expressions 
+	friend Signal operator^(const Signal& lhs, const Signal& rhs);
+	friend Signal operator/(const Signal& lhs, const Signal& rhs);
+	friend Signal operator*(const Signal& lhs, const Signal& rhs);
+	friend Signal operator+(const Signal& lhs, const Signal& rhs);
+	friend Signal operator-(const Signal& lhs, const Signal& rhs);
 
         fill_t fill_;
         buffer_t buffer_;
