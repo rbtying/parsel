@@ -17,7 +17,7 @@ genDefs (def:defs) = (topdef ++ topdefs, code ++ codes, mainloop)
 genDef :: Def -> ([Char], [Char], [Char])
 genDef (FuncDef (Symbol sym) tsyms t expr)
     | sym == "main" = 
-        let mainloop = "bool b=true;\nwhile(" ++ conds ++ ") B = !B;\n"
+        let mainloop = "bool B=true;\nwhile(" ++ conds ++ ") B = !B;\n"
             conds = intercalate "&&" $ map cond [1..numSigs]
             cond n = "out.get(" ++ show (n-1) ++ ").fillBuffer(B)" 
             numSigs = length ts
