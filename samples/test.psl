@@ -1,4 +1,4 @@
-main(signal input) -> (signal) =
+main(signal input) -> (signal, signal) =
     let x[int] = [3, 4]
         int a = x \at\ 3
     in input * a
