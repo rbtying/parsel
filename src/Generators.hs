@@ -20,8 +20,8 @@ genDef :: Def -> ([Char], [Char], [Char])
 genDef (FuncDef (Symbol sym) tsyms t expr)
     | sym == "main" = 
         let mainloop = "bool B=true;\nwhile(" ++ conds ++ ") B = !B;\n"
-            conds = intercalate "&&" $ map cond [1..numSigs]
-            cond n = "out_.get(" ++ show (n-1) ++ ").fillBuffer(B)" 
+            conds = intercalate " && " $ map cond [1..numSigs]
+            cond n = "out().get(" ++ show (n-1) ++ ")().fillBuffer(B)" 
             numSigs = length ts
             TupleType ts = t
 
@@ -37,9 +37,11 @@ exprToLambda :: Expr -> [Char]
 exprToLambda expr = "[]() { return " ++ genExpr expr ++  "; }"
 
 
-genExpr :: Expr -> [Char]
-genExpr expr = "fakeexpr"
-
+genType :: Type -> [Char]
+genType (FuncType ts r) = "std::function<" ++ genRawType r ++ "(" ++ args ++ ")>"
+    where args = intercalate ", " $ map genRawType ts
+genType t = wrapInFunc . genRawType $ t
+    where   wrapInFunc s = "std::function<" ++ s ++ "()>"
 
 genTsym :: Tsym -> [Char]
 genTsym (Tsym t (Symbol s)) = genType t ++ " " ++ s

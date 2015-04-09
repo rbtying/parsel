@@ -8,15 +8,15 @@ import Generators
 
 main :: IO ()
 main = do
-    (a1:(a2:_)) <- getArgs
-    input <- readFile a1
+    (infile:(outfile:_)) <- getArgs
+    input <- readFile infile
     let tokens = AlexToken.scanTokens input
         parse = HappyParser.parse tokens
         semantics = semAnalysis parse
         code =  if semantics == Good
                 then generateCode parse
                 else "Error: " ++ show semantics
-    writeFile a2 code
+    writeFile outfile code
 
 
 data Semantics  = Good
