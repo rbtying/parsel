@@ -34,7 +34,7 @@ namespace psl
 
         fill_t fill_;
         buffer_t buffer_;
-        
+
 
     private:
         Signal(SndfileHandle& file);
