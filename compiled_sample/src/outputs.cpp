@@ -2,8 +2,7 @@
 
 #include <sndfile.hh>
 #include <iostream>
-#include <memory>
-
+#include <memory> 
 using namespace psl;
 
 fill_t psl::toWavFile(Signal* signalP, std::string filepath, float seconds)
@@ -44,3 +43,64 @@ fill_t psl::toWavFile(Signal* signalP, std::string filepath, float seconds)
         return *moreP;
     };
 }
+
+fill_t psl::fillFromFile(SndfileHandle& file)
+{
+    std::shared_ptr<std::vector<short>> fileDataP(
+    	    new std::vector<short>(file.channels() * file.frames()));
+    file.read(fileDataP->data(), fileDataP->size());
+    
+    std::shared_ptr<int> frameP(new int(0));
+    int channels = file.channels();
+
+    return [channels, fileDataP, frameP](buffer_t* bufferP, bool)
+    {
+    	int stopPos = std::min(bufferP->size(),
+    		fileDataP->size() / channels - *frameP);
+    	for (int f = 0; f < stopPos; f++)
+    	{
+    	    (*bufferP)[f] = std::vector<std::complex<double>>(channels);
+    	    for(int c = 0; c < channels; c++)
+    	    	(*bufferP)[f][c] = fileDataP->at(((*frameP + f) * channels) + c);
+    	}
+    	*frameP += stopPos;
+    	for(int i = stopPos; i < bufferP->size(); i++)
+    	    (*bufferP)[i] = std::vector<std::complex<double>>(channels, 0);
+
+    	return stopPos == bufferP->size();
+   
+    };
+}
+
+fill_t psl::fillFromOperator(std::function<std::complex<double>(std::complex<double>, std::complex<double>)> f, Signal& l, Signal& r)
+{
+    std::shared_ptr<bool> moreP(new bool(true));
+    std::shared_ptr<Signal> lhs(new Signal(l));
+    std::shared_ptr<Signal> rhs(new Signal(r));
+
+
+    return [lhs, rhs, moreP, f](buffer_t* bufferP, bool B)
+    {
+	lhs->fillBuffer(B);
+	rhs->fillBuffer(B);
+
+	int stopPos = lhs->buffer_.size();
+	int channels = lhs->channels();
+
+	for (int s = 0; s < stopPos; s++)
+	{
+	    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
+	    for (int c = 0; c < channels; c++)
+	    {
+		(*bufferP)[s][c] = f(lhs->buffer_[s][c], rhs->buffer_[s][c]);		
+	    }
+	}
+
+	// TODO: Jett, still can't seem to get my head around moreP... can
+	// you take a look??
+	return *moreP;
+    };
+
+
+}
+

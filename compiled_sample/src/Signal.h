@@ -26,12 +26,11 @@ namespace psl
         int sampleRate() const;
         int channels() const;
 	
-	// Arithmetic Expressions 
-	friend Signal operator^(const Signal& lhs, const Signal& rhs);
-	friend Signal operator/(const Signal& lhs, const Signal& rhs);
-	friend Signal operator*(const Signal& lhs, const Signal& rhs);
-	friend Signal operator+(const Signal& lhs, const Signal& rhs);
-	friend Signal operator-(const Signal& lhs, const Signal& rhs);
+
+	Signal operator+(Signal& s);
+	Signal operator-(Signal& s);
+	Signal operator*(Signal& s);
+	Signal operator/(Signal& s);
 
         fill_t fill_;
         buffer_t buffer_;
@@ -39,7 +38,6 @@ namespace psl
 
     private:
         Signal(SndfileHandle& file);
-        static fill_t fillFromFile(SndfileHandle& file);
 
         bool cacheB_, firstRun_, more_;
         int sampleRate_, channels_;
