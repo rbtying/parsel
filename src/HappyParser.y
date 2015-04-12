@@ -40,7 +40,6 @@ import AST
     '('                           { TokenLParen _ }
     ')'                           { TokenRParen _ }
     num                           { TokenNum _ $$ }
-    unit                          { TokenUnit _ $$ }
     sym                           { TokenSym _ $$ }
 
 %right '='
@@ -59,14 +58,19 @@ import AST
 %left '.'
 %%
 
-AST : Defs                                          { $1 }
+AST : TopDefs                                       { $1 }
+
+TopDefs : TopDef                                    { [$1] }
+        | TopDefs TopDef                            { $2 : $1 }
+
+TopDef : Def                                        { Def $1 }
+       | struct Symbol '(' Tsyms ')'                { Struct $2 $4 }
 
 Defs : Def                                          { [$1] }
      | Defs Def                                     { $2 : $1 }
 
 Def : Symbol '(' Tsyms ')' '->' Type '=' Expr       { FuncDef $1 $3 $6 $8 }
     | Tsym '=' Expr                                 { VarDef $1 $3 }
-    | struct Symbol '(' Tsyms ')'                   { Struct $2 $4 }
 
 Exprs : Expr %prec expr                             { [$1] }
       | Exprs ',' Expr                              { $3 : $1 }
@@ -122,12 +126,13 @@ Op   : Expr '+' Expr                                { BinaryOp Plus $1 $3 }
      | Expr '!=' Expr                               { UnaryOp Negate (BinaryOp Eq $1 $3) }
      | '!' Expr                                     { UnaryOp Negate $2 }
 
-Literal : num unit                                  { Literal $1 $2 }
-        | num                                       { Literal $1 "" }
-        | '-' num unit                              { UnaryOp Negate (Literal $2 $3) }
-        | '-' num                                   { UnaryOp Negate (Literal $2 "") }
+Literal : num                                       { toLiteral $1 }
+        | '-' num                                   { UnaryOp Negate $ toLiteral $2 }
 
 {
 parseError :: [Token] -> a
 parseError x = error $ "Parse error: " ++ (show x)
+
+toLiteral :: (Float, [Char]) -> Expr
+toLiteral (n, u) = Literal n u
 }

@@ -1,6 +1,10 @@
 {
 {-# OPTIONS_GHC -w #-}
 module AlexToken (Token(..),scanTokens, token_posn) where
+
+import Data.List
+import Data.Char
+import Control.Arrow
 }
 
 %wrapper "posn"
@@ -8,6 +12,7 @@ module AlexToken (Token(..),scanTokens, token_posn) where
 $digit = 0-9
 $alpha = [a-zA-Z]
 $eol   = [\n]
+@num = [0-9]+(\.[0-9]+)?([KMmu]?(Hz|s|min|hour))?
 
 tokens :-
 
@@ -41,8 +46,7 @@ tokens :-
   \]                            { tok (\p s -> TokenRBracket p) }
   \(                            { tok (\p s -> TokenLParen p) }
   \)                            { tok (\p s -> TokenRParen p) }
-  [KMmu]?(Hz|s|min|hour)        { tok (\p s -> TokenUnit p s) }
-  $digit+(\.$digit+)?           { tok (\p s -> TokenNum p (read s :: Float)) }
+  @num                          { tok (\p s -> TokenNum p (toNum s)) }
   $alpha [$alpha $digit \_ \']* { tok (\p s -> TokenSym p s) }
   [\,]                          { tok (\p s -> TokenComma p) }
   [\.]                          { tok (\p s -> TokenDot p) }
@@ -80,13 +84,15 @@ data Token = TokenStruct AlexPosn
            | TokenRParen AlexPosn
            | TokenLBracket AlexPosn
            | TokenRBracket AlexPosn
-           | TokenUnit AlexPosn String
-           | TokenNum AlexPosn Float
+           | TokenNum AlexPosn (Float, String)
            | TokenSym AlexPosn String
            | TokenNot AlexPosn
            deriving (Eq,Show)
 
 scanTokens = alexScanTokens
+
+toNum :: [Char] -> (Float, [Char])
+toNum = (read *** id) . partition isDigit
 
 token_posn (TokenStruct p) = p
 token_posn (TokenLet p) = p
@@ -117,7 +123,6 @@ token_posn (TokenLParen p) = p
 token_posn (TokenRParen p) = p
 token_posn (TokenLBracket p) = p
 token_posn (TokenRBracket p) = p
-token_posn (TokenUnit p _) = p
 token_posn (TokenSym p _) = p
 token_posn (TokenNum p _) = p
 token_posn (TokenNot p) = p

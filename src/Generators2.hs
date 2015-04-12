@@ -9,8 +9,7 @@ genExpr :: Expr -> [Char]
 -- is this rhs of a definition?
 genExpr (Literal val unit) = show val
 
-genExpr (Attr expr (Symbol sym)) = genExpr expr ++ "." ++ sym
-
+genExpr (Attr expr (Symbol sym)) = genExpr expr ++ "." ++ sym 
 genExpr (Tuple es) = "(tuple es)"
 
 genExpr (List es) = "(list es)"
@@ -39,6 +38,3 @@ genExpr (LetExp ds expr) = "({" ++ defs ++ genExpr expr ++ "})"
           numDefs = length ds
 -}
 genExpr (Cond expr1 expr2 expr3) = "cond expr1 expr2 expr3"
-
-genExpr (TypeExpr t) = "typeExpr t"
-
