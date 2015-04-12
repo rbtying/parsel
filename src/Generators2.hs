@@ -1,9 +1,7 @@
 module Generators2 where
-
 import {-# SOURCE #-} Generators()
 import Data.List
 import AST
-
 genExpr :: Expr -> [Char]
 
 -- Q: how are these types expressed in C ? (time literal?)
@@ -32,9 +30,14 @@ genExpr (Func expr es) = genExpr expr ++ exprs
 genExpr (Var (Symbol sym)) = sym
 
 genExpr (Lambda tsyms t expr) = "lambda tsyms t expr"
-
-genExpr (LetExp ds expr) = "letexp ds expr"
-
+-- same pattern as below
+genExpr (LetExp ds expr) = "({" ++ "defs" ++ genExpr expr ++ "})"
+{-
+genExpr (LetExp ds expr) = "({" ++ defs ++ genExpr expr ++ "})"
+    where defs = intercalate " " $ map eachDef [1..numDefs]
+          eachDef n = genDef (ds !! (n-1))
+          numDefs = length ds
+-}
 genExpr (Cond expr1 expr2 expr3) = "cond expr1 expr2 expr3"
 
 genExpr (TypeExpr t) = "typeExpr t"
