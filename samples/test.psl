@@ -1,13 +1,5 @@
-main(signal input) -> (signal, signal) =
-    let x[int] = [3, 4]
-        int a = x \at\ 3
-    in input * a
-
-int a = map with \(int i) -> int = at(x, i), [3, 4, 1s]
-
-s(signal input, float s) -> signal = input * s
-
-struct thing(
-    int a,
-    signal b
-)
+main(input[char]) -> (signal, signal) =
+    let signal dumbsumb = sum(ss)
+        ss[signal] = [s, s, s]
+        signal s = signalFromWav(input)
+    in (dumbsum, dumbsum)

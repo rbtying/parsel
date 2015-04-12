@@ -22,8 +22,8 @@ genTopDef (Def d) = ("", "", td, c, ml)
     where (td, c, ml) = genDef d
 genTopDef (Struct (Symbol sym) tsyms) = (sdec, sdef, "", "", "")
     where   sdec = "struct " ++ sym ++ ";\n"
-            sdef = "struct " ++ sym ++ " {\n" ++ members ++ "\n};\n"
-            members = intercalate ";\n" $ map genTsym tsyms
+            sdef = "struct " ++ sym ++ " {\n" ++ members ++ "};\n"
+            members = concat $ map ((++";\n") . genTsym) tsyms
 
 
 -- topdecs, code
@@ -40,7 +40,7 @@ genDefs (def:defs) = (topdef ++ topdefs, code ++ codes)
 genDef :: Def -> ([Char], [Char], [Char])
 genDef (FuncDef (Symbol sym) tsyms rt expr)
     | sym == "main" = 
-        let mainloop = "bool B = true;\nwhile(" ++ conds ++ ") B = !B;\n"
+        let mainloop = "bool B = true;\nwhile(" ++ conds ++ ")\nB = !B;\n"
             conds = intercalate " && " $ map cond [1..numSigs]
             cond n = "out().get(" ++ show (n-1) ++ ")().fillBuffer(B)" 
             numSigs = length ts
@@ -50,7 +50,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
         in (topdef, code, mainloop)
     | otherwise = 
         let def = sym ++ " = " ++ lambda
-            lambda = "[&](" ++ args ++ ") { return " ++ genExpr expr ++ "; };\n"
+            lambda = "[&](" ++ args ++ ") {\nreturn " ++ genExpr expr ++ ";\n};\n"
             args = intercalate ", " $ map genRawTsym tsyms
             
             decl = (genTsym $ Tsym (FuncType argtypes rt) (Symbol sym)) ++ ";\n"
@@ -58,7 +58,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
         in (decl, def, "")
 
 genDef (VarDef tsym expr) = (decl, def, "")
-    where   def = sym ++ " = [&]() { return " ++ genExpr expr ++  "; };\n"
+    where   def = sym ++ " = [&]() {\nreturn " ++ genExpr expr ++  ";\n};\n"
             Tsym _ (Symbol sym) = tsym
             decl = genTsym tsym ++ ";\n"
 

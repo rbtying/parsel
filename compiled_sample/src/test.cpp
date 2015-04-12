@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     thing = [&](int x, int y) { return thing2(x) + thing2(y); };
     thing2 = [&](int x) { return x + 1; };
 
-    std::cout << thing(3, 4) << "\n";
+    std::cout << [&]() { return "hi"; }() << "\n";
 
 
     // main loop

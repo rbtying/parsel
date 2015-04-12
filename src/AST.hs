@@ -16,7 +16,6 @@ data Expr       = Literal Float Unit
                 | Attr Expr Symbol
                 | Tuple [Expr]
                 | List [Expr]
-                | Index Expr Expr
                 | BinaryOp BinOp Expr Expr
                 | UnaryOp UnOp Expr
                 | Func Expr [Expr]
