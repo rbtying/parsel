@@ -72,35 +72,32 @@ fill_t psl::fillFromFile(SndfileHandle& file)
     };
 }
 
-fill_t psl::fillFromOperator(std::function<std::complex<double>(std::complex<double>, std::complex<double>)> f, Signal& l, Signal& r)
+fill_t psl::fillFromOperator(op_t f, Signal* lhs, Signal* rhs)
 {
     std::shared_ptr<bool> moreP(new bool(true));
-    std::shared_ptr<Signal> lhs(new Signal(l));
-    std::shared_ptr<Signal> rhs(new Signal(r));
 
 
     return [lhs, rhs, moreP, f](buffer_t* bufferP, bool B)
     {
-	lhs->fillBuffer(B);
-	rhs->fillBuffer(B);
+	bool l_ok = lhs->fillBuffer(B);
+	bool r_ok = rhs->fillBuffer(B);
 
 	int stopPos = lhs->buffer_.size();
 	int channels = lhs->channels();
-
-	for (int s = 0; s < stopPos; s++)
+	if (l_ok && r_ok) 
 	{
-	    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
-	    for (int c = 0; c < channels; c++)
+	    for (int s = 0; s < stopPos; s++)
 	    {
-		(*bufferP)[s][c] = f(lhs->buffer_[s][c], rhs->buffer_[s][c]);		
+		(*bufferP)[s] = std::vector<std::complex<double>>(channels);
+		for (int c = 0; c < channels; c++)
+		{
+		    (*bufferP)[s][c] = f(lhs->buffer_[s][c], rhs->buffer_[s][c]);		
+		}
 	    }
-	}
-
-	// TODO: Jett, still can't seem to get my head around moreP... can
-	// you take a look??
 	return *moreP;
+	}
+	else
+	    return *moreP=false;
     };
-
-
 }
 

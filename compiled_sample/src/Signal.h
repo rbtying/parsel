@@ -11,6 +11,7 @@ namespace psl
 {
     typedef std::vector<std::complex<double>> sample_t;
     typedef std::vector<sample_t> buffer_t;
+    typedef std::function<std::complex<double>(std::complex<double>, std::complex<double>)> op_t;
 
     // returns false if unable to continue filling
     typedef std::function<bool(buffer_t*, bool)> fill_t;
@@ -27,11 +28,11 @@ namespace psl
         int channels() const;
 	
 
-	Signal operator+(Signal& s);
-	Signal operator-(Signal& s);
-	Signal operator*(Signal& s);
-	Signal operator/(Signal& s);
-
+	Signal add(Signal* s);
+	Signal sub(Signal* s);
+	Signal mul(Signal* s);
+	Signal div(Signal* s);
+	
         fill_t fill_;
         buffer_t buffer_;
 

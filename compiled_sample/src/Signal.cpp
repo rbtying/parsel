@@ -50,33 +50,33 @@ int Signal::channels() const
 }
 
 
-Signal Signal::operator/(Signal& s) 
+Signal Signal::add(Signal* s) 
 {
-    std::function<std::complex<double>(std::complex<double>, std::complex<double>)> f = [](std::complex<double> l, std::complex<double> r) {return l/r;};
+    op_t f = [](std::complex<double> l, std::complex<double> r) {return l+r;};
 
-    return Signal(fillFromOperator(f, *this, s), sampleRate_, channels_);
+    return Signal(fillFromOperator(f, this, s), sampleRate_, channels_);
 
 }
-Signal Signal::operator*(Signal& s) 
+Signal Signal::sub(Signal* s) 
 {
-    std::function<std::complex<double>(std::complex<double>, std::complex<double>)> f = [](std::complex<double> l, std::complex<double> r) {return l*r;};
+    op_t f = [](std::complex<double> l, std::complex<double> r) {return l-r;};
 
-    return Signal(fillFromOperator(f, *this, s), sampleRate_, channels_);
+    return Signal(fillFromOperator(f, this, s), sampleRate_, channels_);
 
 }
-Signal Signal::operator+(Signal& s) 
+Signal Signal::mul(Signal* s) 
 {
-    std::function<std::complex<double>(std::complex<double>, std::complex<double>)> f = [](std::complex<double> l, std::complex<double> r) {return l+r;};
+    op_t f = [](std::complex<double> l, std::complex<double> r) {return l*r;};
     
-    return Signal(fillFromOperator(f, *this, s), sampleRate_, channels_);
+    return Signal(fillFromOperator(f, this, s), sampleRate_, channels_);
     
 }
 
-Signal Signal::operator-(Signal& s) 
+Signal Signal::div(Signal* s) 
 {
-    std::function<std::complex<double>(std::complex<double>, std::complex<double>)> f = [](std::complex<double> l, std::complex<double> r) {return l-r;};
+    op_t f = [](std::complex<double> l, std::complex<double> r) {return l/r;};
 
-    return Signal(fillFromOperator(f, *this, s), sampleRate_ , channels_);
+    return Signal(fillFromOperator(f, this, s), sampleRate_ , channels_);
 
 }
 
