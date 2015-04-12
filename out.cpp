@@ -9,20 +9,23 @@ int main(int argc, char **argv) {
     out = [&]() {
         return [&]() {
             psl::Chunk<psl::Signal> s;
-            psl::Chunk<std::vector<psl::Chunk<psl::Signal>>> ss;
-            psl::Chunk<psl::Signal> dumbsumb;
+            psl::Chunk<psl::Signal> ss;
 
             s = [&]() {
                 return signalFromWav(input());
             };
             ss = [&]() {
-                return {s, s, s};
-            };
-            dumbsumb = [&]() {
-                return sum(ss());
+                return [&]() {
+                    if(psl::eq(data(), []() { return "hi"; }())()) {
+                        return s;
+                    }
+                    else {
+                        return psl::multiply([]() { return 2.0; }(), s());
+                    }
+                };
             };
 
-            return std::make_tuple(dumbsum, dumbsum);
+            return std::make_tuple(ss, ss);
         }();
     };
 

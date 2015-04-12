@@ -50,6 +50,7 @@ tokens :-
   $alpha [$alpha $digit \_ \']* { tok (\p s -> TokenSym p s) }
   [\,]                          { tok (\p s -> TokenComma p) }
   [\.]                          { tok (\p s -> TokenDot p) }
+  \"[^\\\"]*\"                  { tok (\p s -> TokenString p s) }
 
 {
 
@@ -87,6 +88,7 @@ data Token = TokenStruct AlexPosn
            | TokenNum AlexPosn (Float, String)
            | TokenSym AlexPosn String
            | TokenNot AlexPosn
+           | TokenString AlexPosn String
            deriving (Eq,Show)
 
 scanTokens = alexScanTokens
@@ -126,5 +128,6 @@ token_posn (TokenRBracket p) = p
 token_posn (TokenSym p _) = p
 token_posn (TokenNum p _) = p
 token_posn (TokenNot p) = p
+token_posn (TokenString p _) = p
 
 }

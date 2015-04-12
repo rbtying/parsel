@@ -23,6 +23,7 @@ data Expr       = Literal Float Unit
                 | Lambda Tsyms Type Expr
                 | LetExp [Def] Expr
                 | Cond Expr Expr Expr
+                | Str [Char]
                 deriving (Show)
 
 type Unit       = String

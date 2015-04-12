@@ -1,5 +1,6 @@
-main(input[char]) -> (signal, signal) =
-    let signal dumbsumb = sum(ss)
-        ss[signal] = [s, s, s]
+main(input[char], data[char]) -> (signal, signal) =
+    let signal ss = if data == "hi"
+                    then s
+                    else 2 * s
         signal s = signalFromWav(input)
-    in (dumbsum, dumbsum)
+    in (ss, ss)

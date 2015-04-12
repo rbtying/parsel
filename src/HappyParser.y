@@ -41,6 +41,7 @@ import AST
     ')'                           { TokenRParen _ }
     num                           { TokenNum _ $$ }
     sym                           { TokenSym _ $$ }
+    string                        { TokenString _ $$ }
 
 %right '='
 %left if else then
@@ -85,6 +86,7 @@ Expr : Literal                                      { $1 }
      | LetExp                                       { $1 }
      | if Expr then Expr else Expr                  { Cond $2 $4 $6 }
      | Op                                           { $1 }
+     | string                                       { Str $1 }
 
 LetExp : let Defs in Expr                           { LetExp $2 $4 }
 
