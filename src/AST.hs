@@ -1,11 +1,12 @@
 module AST where
 
-type AST        = [Def]
+type AST        = [TopDef]
 
+data TopDef     = Def Def
+                | Struct Symbol Tsyms
 
 data Def        = FuncDef Symbol Tsyms Type Expr
                 | VarDef Tsym Expr
-                | Struct Symbol Tsyms
                 deriving (Show)
 
 data Symbol     = Symbol String
@@ -23,7 +24,6 @@ data Expr       = Literal Float Unit
                 | Lambda Tsyms Type Expr
                 | LetExp [Def] Expr
                 | Cond Expr Expr Expr
-                | TypeExpr Type
                 deriving (Show)
 
 type Unit       = String

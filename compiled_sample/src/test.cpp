@@ -16,6 +16,15 @@ int main(int argc, char **argv)
     psl::Signal outsignal(psl::toWavFile(&insignal, "output.wav", 5),
             insignal.sampleRate(), insignal.channels());
 
+    std::function<int(int, int)> thing;
+    std::function<int(int)> thing2;
+
+    thing = [&](int x, int y) { return thing2(x) + thing2(y); };
+    thing2 = [&](int x) { return x + 1; };
+
+    std::cout << thing(3, 4) << "\n";
+
+
     // main loop
     bool B = true;
     while(outsignal.fillBuffer(B))

@@ -6,49 +6,83 @@ import Data.Ord
 import AST
 import Generators2
 
-genDefs :: [Def] -> ([Char], [Char], [Char])
-genDefs [] = ("you", "done", "goofed")
-genDefs [def] = genDef def
-genDefs (def:defs) = (topdef ++ topdefs, code ++ codes, mainloop)
-    where   (topdef, code, mlNew) = genDef def
-            (topdefs, codes, mlOld) = genDefs defs
-            mainloop = maximumBy (comparing length) [mlNew, mlOld]
+-- sdecs, sdefs, topdecs, code, mainloop
+genTopDefs :: [TopDef] -> ([Char], [Char], [Char], [Char], [Char])
+genTopDefs [] = ("", "", "", "", "")
+genTopDefs [td] = genTopDef td
+genTopDefs (td:tds) = (sdec ++ sdecs, sdef ++ sdefs, d ++ ds, c ++ cs, ml)
+    where   (sdec, sdef, d, c, mlNew) = genTopDef td
+            (sdecs, sdefs, ds, cs, mlOld) = genTopDefs tds
+            ml = maximumBy (comparing length) [mlNew, mlOld]
 
 
--- TODO: add wrapper for caching argument-less function evaluation results
+-- sdecs, sdefs, topdecs, code, mainloop
+genTopDef :: TopDef -> ([Char], [Char], [Char], [Char], [Char])
+genTopDef (Def d) = ("", "", td, c, ml)
+    where (td, c, ml) = genDef d
+genTopDef (Struct (Symbol sym) tsyms) = (sdec, sdef, "", "", "")
+    where   sdec = "struct " ++ sym ++ ";\n"
+            sdef = "struct " ++ sym ++ " {\n" ++ members ++ "\n};\n"
+            members = intercalate ";\n" $ map genTsym tsyms
+
+
+-- topdecs, code
+genDefs :: [Def] -> ([Char], [Char])
+genDefs [] = ("", "")
+genDefs [def] = (topdef, code)
+    where (topdef, code, _) = genDef def
+genDefs (def:defs) = (topdef ++ topdefs, code ++ codes)
+    where   (topdef, code, _) = genDef def
+            (topdefs, codes) = genDefs defs
+
+
+-- topdecs, code, mainloop
 genDef :: Def -> ([Char], [Char], [Char])
-genDef (FuncDef (Symbol sym) tsyms t expr)
+genDef (FuncDef (Symbol sym) tsyms rt expr)
     | sym == "main" = 
-        let mainloop = "bool B=true;\nwhile(" ++ conds ++ ") B = !B;\n"
+        let mainloop = "bool B = true;\nwhile(" ++ conds ++ ") B = !B;\n"
             conds = intercalate " && " $ map cond [1..numSigs]
             cond n = "out().get(" ++ show (n-1) ++ ")().fillBuffer(B)" 
             numSigs = length ts
-            TupleType ts = t
+            TupleType ts = rt
 
-            (topdef, code, _) = genDef (VarDef (Tsym t $ Symbol "out") expr)
+            (topdef, code, _) = genDef (VarDef (Tsym rt $ Symbol "out") expr)
         in (topdef, code, mainloop)
-    | otherwise     = ("", "", "")
-genDef (VarDef tsym expr) = ("", def, "")
-    where   def = genTsym tsym ++ "(" ++ exprToLambda expr ++ ");\n"
-genDef (Struct sym tsyms) = ("", "", "")
+    | otherwise = 
+        let def = sym ++ " = " ++ lambda
+            lambda = "[&](" ++ args ++ ") { return " ++ genExpr expr ++ "; };\n"
+            args = intercalate ", " $ map genRawTsym tsyms
+            
+            decl = (genTsym $ Tsym (FuncType argtypes rt) (Symbol sym)) ++ ";\n"
+            argtypes = map (\ts -> let Tsym t _ = ts in t) tsyms
+        in (decl, def, "")
 
-
-exprToLambda :: Expr -> [Char]
-exprToLambda expr = "[]() { return " ++ genExpr expr ++  "; }"
+genDef (VarDef tsym expr) = (decl, def, "")
+    where   def = sym ++ " = [&]() { return " ++ genExpr expr ++  "; };\n"
+            Tsym _ (Symbol sym) = tsym
+            decl = genTsym tsym ++ ";\n"
 
 
 genType :: Type -> [Char]
-genType (FuncType ts r) = "std::function<" ++ genRawType r ++ "(" ++ args ++ ")>"
-    where args = intercalate ", " $ map genRawType ts
-genType t = wrapInFunc . genRawType $ t
-    where   wrapInFunc s = "std::function<" ++ s ++ "()>"
+genType (FuncType ts r) = "psl::Chunk<" ++ types ++ ">"
+    where types = intercalate ", " $ map genRawType (r:ts)
+genType t = wrapInChunk . genRawType $ t
+    where   wrapInChunk s = "psl::Chunk<" ++ s ++ ">"
+
 
 genTsym :: Tsym -> [Char]
 genTsym (Tsym t (Symbol s)) = genType t ++ " " ++ s
 
 
+genRawTsym :: Tsym -> [Char]
+genRawTsym (Tsym t (Symbol s)) = genRawType t ++ " " ++ s
+
+
 genRawType :: Type -> [Char]
-genRawType (Type (Symbol s)) = s
+genRawType (Type (Symbol s))
+    | s == "signal"     = "psl::Signal"
+    | s == "complex"    = "std::complex<double>"
+    | otherwise         = s
 genRawType (ListType t) = "std::vector<" ++ genType t ++ ">"
 genRawType (TupleType ts) = "std::tuple<" ++ types ++ ">"
     where types = intercalate ", " $ map genType ts

@@ -31,8 +31,10 @@ semAnalysis _ = Good
 
 
 generateCode :: AST -> [Char]
-generateCode ast = header ++ topdefs ++ maindef ++ code ++ mainloop ++ "}"
+generateCode ast = header ++ n:sdecs ++ n:sdefs ++
+                    n:topdecs ++ n:maindef ++ code ++ n:mainloop ++ "}"
     where   header = "#include <iostream>\n#include \"outputs.h\"\n"
-            (topdefs, code, mainloop) = genDefs ast
+            (sdecs, sdefs, topdecs, code, mainloop) = genTopDefs ast
             -- TODO: make maindef parse arguments into strings
             maindef = "int main(int argc, char **argv) {\n"
+            n = '\n'
