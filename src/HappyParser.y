@@ -45,12 +45,12 @@ import AST
 
 %right '='
 %left if else then
-%left in
-%left expr
+%left let in
 %right '\\'
-%right with
-%left '('
+%left expr
+%left with
 %left ','
+%left '('
 %left and or
 %left '<' '>' '<=' '>=' '!=' '=='
 %left '+' '-'

@@ -12,9 +12,9 @@ main = do
     input <- readFile infile
     let tokens = AlexToken.scanTokens input
         parse = HappyParser.parse tokens
-        semantics = semAnalysis parse
+        (semantics, newparse) = semAnalysis parse
         code =  if semantics == Good
-                then generateCode parse
+                then generateCode newparse
                 else "Error: " ++ show semantics
     writeFile outfile code
 
@@ -26,8 +26,8 @@ data Semantics  = Good
                 deriving (Show, Eq)
 
 
-semAnalysis :: AST -> Semantics
-semAnalysis _ = Good
+semAnalysis :: AST -> (Semantics, AST)
+semAnalysis ast = (Good, ast)
 
 
 generateCode :: AST -> [Char]

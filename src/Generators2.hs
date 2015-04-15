@@ -4,6 +4,8 @@ import {-# SOURCE #-} Generators
 import Data.List
 import AST
 
+-- TODO: "with" inside of "in"
+
 genExpr :: Expr -> [Char]
 
 -- Q: how are these types expressed in C ? (time literal?)
@@ -15,7 +17,7 @@ genExpr (Literal val unit) = constToLambda . show $ val
 
 genExpr (Str s) = constToLambda s
 
-genExpr (Attr expr (Symbol sym)) = "(" ++ genExpr expr ++ ")" ++ "." ++ sym 
+genExpr (Attr expr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
 
 genExpr (Tuple exprs) = "std::make_tuple(" ++ es ++ ")"
     where es = intercalate ", " $ map genExpr exprs
@@ -35,7 +37,6 @@ genExpr (BinaryOp binOp expr1 expr2) =
             opToFunc Eq             = "psl::eq"
             opToFunc And            = "psl::and"
             opToFunc Or             = "psl::or"
-            
 
 genExpr (UnaryOp unOp expr) =
     genExpr $ Func (Var . Symbol . opToFunc $ unOp) [expr]

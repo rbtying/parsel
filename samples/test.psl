@@ -1,6 +1,1 @@
-main(input[char], data[char]) -> (signal, signal) =
-    let signal ss = if data == "hi"
-                    then s
-                    else 2 * -s
-        signal s = signalFromWav(input)
-    in (ss, ss)
+int thing = a(f with a, b)
