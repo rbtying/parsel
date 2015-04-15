@@ -1,3 +1,4 @@
+import subprocess
 import sys as sys
 class Base:
 
@@ -14,6 +15,10 @@ class Base:
             if out != '':
                 sys.stdout.write(out)
                 sys.stdout.flush()
+    def startSubprocess(self, cmd):
+        p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE) 
+        self.subprocessOutput(p)
+        self.toStringOutput("\n-----------------------\n")
 
 class bcolors:
     HEADER = '\033[95m'

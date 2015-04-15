@@ -1,4 +1,4 @@
-import subprocess
+
 from base import Base
 
 class Builder(Base):
@@ -7,10 +7,6 @@ class Builder(Base):
         self.cpp_file = cpp_file
         self.build()
         self.compileToCpp()
-
-    def startSubprocess(self, cmd): 
-        p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE)
-        self.subprocessOutput(p)
 
     def build(self):
         self.toStringOutput("\nRunning cabal build ... \n")
