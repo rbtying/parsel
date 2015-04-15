@@ -127,9 +127,9 @@ Op   : Expr '+' Expr                                { BinaryOp Plus $1 $3 }
      | Expr or Expr                                 { BinaryOp Or $1 $3 }
      | Expr '!=' Expr                               { UnaryOp Negate (BinaryOp Eq $1 $3) }
      | '!' Expr                                     { UnaryOp Negate $2 }
+     | '-' Expr %prec '!'                           { UnaryOp Negate $2 }
 
 Literal : num                                       { toLiteral $1 }
-        | '-' num                                   { UnaryOp Negate $ toLiteral $2 }
 
 {
 parseError :: [Token] -> a

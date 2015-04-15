@@ -16,11 +16,11 @@ int main(int argc, char **argv) {
             };
             ss = [&]() {
                 return [&]() {
-                    if(psl::eq(data(), []() { return "hi"; }())()) {
+                    if(psl::eq(data(), "hi")()) {
                         return s;
                     }
                     else {
-                        return psl::multiply([]() { return 2.0; }(), s());
+                        return psl::multiply(2.0, psl::negate(s()));
                     }
                 };
             };
