@@ -111,21 +111,45 @@ fill_t psl::fillFromPhaseShift(utime_t delay, Signal* sig)
 
     return [delay, sig, moreP](buffer_t* bufferP, bool B) 
     {
-	int startpos = delay * sig->sampleRate();
+
 	int stopPos = sig->buffer_.size();
 	int channels = sig->channels();	
-	bool success = sig->fillBuffer(B);
+	int startPos = abs(delay) * sig->sampleRate();	
+	
+	bool success = sig->fillBuffer(B);	
 	if (success) 
-	{
-	    for (int s= 0; s < stopPos; s++)
-	    {
-		(*bufferP)[s] = std::vector<std::complex<double>>(channels);
-		for (int c = 0; c < channels; c++)
+	{ 
+	    if (delay >= 0) {	
+		
+		
+		for(int s = 0; s < startPos; s++)
+		    (*bufferP)[s] = std::vector<std::complex<double>>(channels, 0);
+		    
+    	
+		for (int s = startPos; s < stopPos; s++)
 		{
-		    (*bufferP)[startpos+s][c] = (sig->buffer_[s][c]);		
+		    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
+		    for (int c = 0; c < channels; c++)
+		    {
+			(*bufferP)[s][c] = (sig->buffer_[s][c]);		
+		    }
 		}
+
+	    } else {
+		for (int s = 0; s < stopPos-startPos; s++) {
+
+		    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
+		    for (int c = 0; c < channels; c++)
+		    {
+			(*bufferP)[s][c] = (sig->buffer_[s+startPos][c]);		
+		    }
+		}
+
 	    }
-	return *moreP;
+
+
+	    return *moreP;
+	
 	}
 	else
 	    return *moreP=false;
