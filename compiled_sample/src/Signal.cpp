@@ -80,3 +80,7 @@ Signal Signal::div(Signal* s)
 
 }
 
+Signal Signal::shift(utime_t delay)
+{
+    return Signal(fillFromPhaseShift(delay, this), sampleRate_, channels_);
+}

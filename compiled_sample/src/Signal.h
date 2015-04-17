@@ -12,6 +12,7 @@ namespace psl
     typedef std::vector<std::complex<double>> sample_t;
     typedef std::vector<sample_t> buffer_t;
     typedef std::function<std::complex<double>(std::complex<double>, std::complex<double>)> op_t;
+    typedef unsigned long utime_t;
 
     // returns false if unable to continue filling
     typedef std::function<bool(buffer_t*, bool)> fill_t;
@@ -33,6 +34,8 @@ namespace psl
 	Signal mul(Signal* s);
 	Signal div(Signal* s);
 	
+	Signal shift(utime_t delay);
+
         fill_t fill_;
         buffer_t buffer_;
 

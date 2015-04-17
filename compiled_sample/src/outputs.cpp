@@ -1,5 +1,5 @@
 #include "outputs.h"
-
+#include <cassert>
 #include <sndfile.hh>
 #include <iostream>
 #include <memory> 
@@ -75,7 +75,11 @@ fill_t psl::fillFromFile(SndfileHandle& file)
 fill_t psl::fillFromOperator(op_t f, Signal* lhs, Signal* rhs)
 {
     std::shared_ptr<bool> moreP(new bool(true));
-
+    
+    // fail if two signals arent the same size 
+    assert(lhs->channels() == rhs->channels());
+    assert(lhs->sampleRate() == rhs->sampleRate());
+    assert(lhs->buffer_.size() == rhs->buffer_.size());
 
     return [lhs, rhs, moreP, f](buffer_t* bufferP, bool B)
     {
@@ -99,5 +103,33 @@ fill_t psl::fillFromOperator(op_t f, Signal* lhs, Signal* rhs)
 	else
 	    return *moreP=false;
     };
+}
+
+fill_t psl::fillFromPhaseShift(utime_t delay, Signal* sig)
+{
+    std::shared_ptr<bool> moreP(new bool(true));
+
+    return [delay, sig, moreP](buffer_t* bufferP, bool B) 
+    {
+	int startpos = delay * sig->sampleRate();
+	int stopPos = sig->buffer_.size();
+	int channels = sig->channels();	
+	bool success = sig->fillBuffer(B);
+	if (success) 
+	{
+	    for (int s= 0; s < stopPos; s++)
+	    {
+		(*bufferP)[s] = std::vector<std::complex<double>>(channels);
+		for (int c = 0; c < channels; c++)
+		{
+		    (*bufferP)[startpos+s][c] = (sig->buffer_[s][c]);		
+		}
+	    }
+	return *moreP;
+	}
+	else
+	    return *moreP=false;
+    };
+	
 }
 
