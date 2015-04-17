@@ -13,9 +13,14 @@ int main(int argc, char **argv)
         std::exit(1);
     }
     psl::Signal insignal((std::string(argv[1])));
-
-    psl::Signal outsignal(psl::toWavFile(&insignal, "output.wav", 5),
-            insignal.sampleRate(), insignal.channels());
+     
+    psl::Signal newSignal = insignal; 
+    // shift doesnt work yet 
+    // psl::Signal newSignal = insignal.shift(2);
+    
+    psl::Signal outsignal(psl::toWavFile(&newSignal, "output.wav", 5),
+            newSignal.sampleRate(), newSignal.channels());
+    
 
     // main loop
     bool B = true;

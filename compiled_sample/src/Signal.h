@@ -27,7 +27,6 @@ namespace psl
 
         int sampleRate() const;
         int channels() const;
-	
 
 	Signal add(Signal* s);
 	Signal sub(Signal* s);
@@ -38,7 +37,6 @@ namespace psl
 
         fill_t fill_;
         buffer_t buffer_;
-
 
     private:
         Signal(SndfileHandle& file);

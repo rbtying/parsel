@@ -98,10 +98,14 @@ fill_t psl::fillFromOperator(op_t f, Signal* lhs, Signal* rhs)
 		    (*bufferP)[s][c] = f(lhs->buffer_[s][c], rhs->buffer_[s][c]);		
 		}
 	    }
-	return *moreP;
+	
+	    return *moreP;
 	}
-	else
-	    return *moreP=false;
+	else {
+	    
+	    std::cout << "ERROR fillBuffer" << std::endl;  
+	    return *moreP = false;
+	}
     };
 }
 
@@ -125,7 +129,7 @@ fill_t psl::fillFromPhaseShift(utime_t delay, Signal* sig)
 		for(int s = 0; s < startPos; s++)
 		    (*bufferP)[s] = std::vector<std::complex<double>>(channels, 0);
 		    
-    	
+		
 		for (int s = startPos; s < stopPos; s++)
 		{
 		    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
@@ -143,6 +147,7 @@ fill_t psl::fillFromPhaseShift(utime_t delay, Signal* sig)
 		    {
 			(*bufferP)[s][c] = (sig->buffer_[s+startPos][c]);		
 		    }
+
 		}
 
 	    }
@@ -152,7 +157,7 @@ fill_t psl::fillFromPhaseShift(utime_t delay, Signal* sig)
 	
 	}
 	else
-	    return *moreP=false;
+	    return *moreP = false;
     };
 	
 }
