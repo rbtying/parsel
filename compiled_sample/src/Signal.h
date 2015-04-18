@@ -13,7 +13,8 @@ namespace psl
     typedef std::vector<sample_t> buffer_t;
     typedef std::function<std::complex<double>(std::complex<double>, std::complex<double>)> op_ta;
     typedef std::function<std::complex<double>(std::complex<double>)> op_tb;
-
+    typedef std::function<std::complex<double>(double)> op_tc;
+    
 
     typedef unsigned long utime_t;
 
@@ -25,8 +26,9 @@ namespace psl
     public:
         Signal(std::string filepath);
         Signal(fill_t fill, int sampleRate, int channels);
-
-        bool fillBuffer(bool B);
+	
+       
+       	bool fillBuffer(bool B);
 
         int sampleRate() const;
         int channels() const;

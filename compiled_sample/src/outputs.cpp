@@ -3,6 +3,8 @@
 #include <sndfile.hh>
 #include <iostream>
 #include <memory> 
+#include <cmath>
+
 using namespace psl;
 
 fill_t psl::toWavFile(Signal* signalP, std::string filepath, float seconds)
@@ -44,6 +46,30 @@ fill_t psl::toWavFile(Signal* signalP, std::string filepath, float seconds)
     };
 }
 
+fill_t psl::fillFromFunction(op_tc f, int sampleRate, int channels)
+{
+
+    std::shared_ptr<bool> moreP(new bool(true));
+    
+    return [sampleRate, channels, f] (buffer_t* bufferP, bool B)
+    {
+	// for now	
+    	int stopPos = bufferP->size();
+    	
+    	for (int s = 0; s < stopPos; s++)
+    	{
+    	    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
+    	    for(int c = 0; c < channels; c++)
+
+    	    	// trying to get from sample -> time.... 
+    	    	(*bufferP)[s][c] = f(s / sampleRate);
+    	}
+
+    	return stopPos == bufferP->size();
+
+    };
+}
+
 fill_t psl::fillFromFile(SndfileHandle& file)
 {
     std::shared_ptr<std::vector<short>> fileDataP(
@@ -76,17 +102,17 @@ fill_t psl::fillFromOperator(op_ta f, Signal* lhs, Signal* rhs)
 {
     std::shared_ptr<bool> moreP(new bool(true));
     
-    // fail if two signals arent the same size 
+    // fail if two signals arent the same 
     assert(lhs->channels() == rhs->channels());
     assert(lhs->sampleRate() == rhs->sampleRate());
-    assert(lhs->buffer_.size() == rhs->buffer_.size());
 
     return [lhs, rhs, moreP, f](buffer_t* bufferP, bool B)
     {
 	bool l_ok = lhs->fillBuffer(B);
 	bool r_ok = rhs->fillBuffer(B);
-
-	int stopPos = lhs->buffer_.size();
+	
+	// TODO: shorter signal needs to be filled with 0's
+	int stopPos = std::min(lhs->buffer_.size(), rhs->buffer_.size());
 	int channels = lhs->channels();
 	if (l_ok && r_ok) 
 	{
@@ -103,7 +129,6 @@ fill_t psl::fillFromOperator(op_ta f, Signal* lhs, Signal* rhs)
 	}
 	
 	else {
-	    std::cout << "ERROR fillBuffer" << std::endl;  
 	    return *moreP = false;
 	}
     };
@@ -135,7 +160,6 @@ fill_t psl::fillFromOperator(op_tb f, Signal* lhs)
 	}
 	
 	else {
-	    std::cout << "ERROR fillBuffer" << std::endl;  
 	    return *moreP = false;
 	}
     };
