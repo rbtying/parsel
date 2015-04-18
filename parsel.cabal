@@ -10,7 +10,7 @@ Executable parsel
   Main-Is:        Main.hs
   Other-modules:  AlexToken,HappyParser
   Hs-Source-Dirs: src
-  Build-Depends:  base >= 4,array,mtl,containers
+  Build-Depends:  base >= 4,array,mtl,containers,process
   GHC-Options:    -Wall
 
 -- Executable parsel

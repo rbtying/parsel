@@ -2,6 +2,7 @@ import qualified HappyParser
 import qualified AlexToken
 
 import System.Environment   
+import System.Process
 
 import AST
 import Generators
@@ -21,15 +22,17 @@ main = do
         code =  if null errors
                 then generateCode newparse
                 else "Error: " ++ show errors
-    writeFile outfile code
+    indent <- readProcess "astyle" [] code
+    writeFile outfile indent
 
 
 
 generateCode :: AST -> [Char]
 generateCode ast = header ++ n:sdecs ++ n:sdefs ++
-                    n:topdecs ++ n:maindef ++ code ++ n:mainloop ++ "}"
+                    n:topdecs ++ n:maindef ++ code ++ n:mainloop ++ footer ++ "}"
     where   header = "#include <iostream>\n#include \"outputs.h\"\n"
             (sdecs, sdefs, topdecs, code, mainloop) = genTopDefs ast
             -- TODO: make maindef parse arguments into strings
             maindef = "int main(int argc, char **argv) {\n"
             n = '\n'
+            footer = "return 0;\n"
