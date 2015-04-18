@@ -82,6 +82,9 @@ genRawType :: Type -> [Char]
 genRawType (Type (Symbol s))
     | s == "signal"     = "psl::Signal"
     | s == "complex"    = "std::complex<double>"
+    | s == "float"      = "double"
+    | s == "time"       = "double"
+    | s == "freq"       = "double"
     | otherwise         = s
 genRawType (ListType t) = "std::vector<" ++ genType t ++ ">"
 genRawType (TupleType ts) = "std::tuple<" ++ types ++ ">"

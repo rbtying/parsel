@@ -4,8 +4,6 @@ import {-# SOURCE #-} Generators
 import Data.List
 import AST
 
--- TODO: "with" inside of "in"
-
 genExpr :: Expr -> [Char]
 
 -- Q: how are these types expressed in C ? (time literal?)
@@ -45,7 +43,12 @@ genExpr (UnaryOp unOp expr) =
 genExpr (Func expr exprs) = genExpr expr ++ "(" ++ es ++ ")"
     where es = intercalate ", " $ map genRawExpr exprs
 
-genExpr (Var (Symbol sym)) = sym
+genExpr (Var (Symbol sym))
+    | sym == "sin"          = "psl::sin"
+    | sym == "cos"          = "psl::cos"
+    | sym == "ft"           = "psl::ft"
+    | sym == "intervalMap"  = "psl::intervalMap"
+    | otherwise     = sym
 
 genExpr (Lambda tsyms t expr) = "lambda tsyms t expr"
 

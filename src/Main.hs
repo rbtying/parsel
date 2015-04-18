@@ -5,6 +5,10 @@ import System.Environment
 
 import AST
 import Generators
+import SemanticAnalysis
+import TypeCheck
+
+import Control.Monad.Writer
 
 main :: IO ()
 main = do
@@ -12,22 +16,13 @@ main = do
     input <- readFile infile
     let tokens = AlexToken.scanTokens input
         parse = HappyParser.parse tokens
-        (semantics, newparse) = semAnalysis parse
-        code =  if semantics == Good
+        (newparse, semantics) = runWriter $ semAnalysis parse
+        errors = filter (/= Good) semantics 
+        code =  if null errors
                 then generateCode newparse
-                else "Error: " ++ show semantics
+                else "Error: " ++ show errors
     writeFile outfile code
 
-
-data Semantics  = Good
-                | TypeError Type Type
-                | Undef Symbol
-                | NoMain
-                deriving (Show, Eq)
-
-
-semAnalysis :: AST -> (Semantics, AST)
-semAnalysis ast = (Good, ast)
 
 
 generateCode :: AST -> [Char]
