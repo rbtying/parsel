@@ -90,7 +90,10 @@ Signal Signal::mul(Signal* s)
 
 Signal Signal::mul(double s)
 {
-    op_tb f = [s](std::complex<double> l) {return l * std::complex<double>(s);};
+    op_tb f = [s](std::complex<double> l) 
+    {
+    	return l * std::complex<double>(s);
+    };
      
     return Signal(fillFromOperator(f, this), sampleRate_, channels_);
 

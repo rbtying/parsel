@@ -3,7 +3,8 @@
 #include <sndfile.hh>
 #include <iostream>
 #include <memory> 
-#include <cmath>
+#include <fstream>
+#include <sstream>
 
 using namespace psl;
 
@@ -78,7 +79,7 @@ fill_t psl::fillFromFile(SndfileHandle& file)
     
     std::shared_ptr<int> frameP(new int(0));
     int channels = file.channels();
-
+    
     return [channels, fileDataP, frameP](buffer_t* bufferP, bool)
     {
     	int stopPos = std::min(bufferP->size(),
@@ -86,13 +87,16 @@ fill_t psl::fillFromFile(SndfileHandle& file)
     	for (int f = 0; f < stopPos; f++)
     	{
     	    (*bufferP)[f] = std::vector<std::complex<double>>(channels);
-    	    for(int c = 0; c < channels; c++)
+    	    for(int c = 0; c < channels; c++) 
+    	    {
     	    	(*bufferP)[f][c] = fileDataP->at(((*frameP + f) * channels) + c);
+    	    }
     	}
     	*frameP += stopPos;
     	for(int i = stopPos; i < bufferP->size(); i++)
+    	{
     	    (*bufferP)[i] = std::vector<std::complex<double>>(channels, 0);
-
+	}
     	return stopPos == bufferP->size();
    
     };
@@ -108,9 +112,11 @@ fill_t psl::fillFromOperator(op_ta f, Signal* lhs, Signal* rhs)
 
     return [lhs, rhs, moreP, f](buffer_t* bufferP, bool B)
     {
+	std::ofstream myfile;
+	myfile.open("temp.txt");	
 	bool l_ok = lhs->fillBuffer(B);
 	bool r_ok = rhs->fillBuffer(B);
-	
+		
 	// TODO: shorter signal needs to be filled with 0's
 	int stopPos = std::min(lhs->buffer_.size(), rhs->buffer_.size());
 	int channels = lhs->channels();
@@ -124,10 +130,9 @@ fill_t psl::fillFromOperator(op_ta f, Signal* lhs, Signal* rhs)
 		    (*bufferP)[s][c] = f(lhs->buffer_[s][c], rhs->buffer_[s][c]);		
 		}
 	    }
-	
+	    myfile.close();
 	    return *moreP;
 	}
-	
 	else {
 	    return *moreP = false;
 	}
@@ -155,10 +160,8 @@ fill_t psl::fillFromOperator(op_tb f, Signal* lhs)
 		    (*bufferP)[s][c] = f(lhs->buffer_[s][c]);
 		}
 	    }
-	
 	    return *moreP;
 	}
-	
 	else {
 	    return *moreP = false;
 	}
@@ -180,12 +183,8 @@ fill_t psl::fillFromPhaseShift(utime_t delay, Signal* sig)
 	if (success) 
 	{ 
 	    if (delay >= 0) {	
-		
-		
 		for(int s = 0; s < startPos; s++)
 		    (*bufferP)[s] = std::vector<std::complex<double>>(channels, 0);
-		    
-		
 		for (int s = startPos; s < stopPos; s++)
 		{
 		    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
@@ -203,18 +202,12 @@ fill_t psl::fillFromPhaseShift(utime_t delay, Signal* sig)
 		    {
 			(*bufferP)[s][c] = (sig->buffer_[s+startPos][c]);		
 		    }
-
 		}
-
 	    }
-
-
 	    return *moreP;
-	
 	}
 	else
 	    return *moreP = false;
     };
-	
 }
 
