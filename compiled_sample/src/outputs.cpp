@@ -72,7 +72,7 @@ fill_t psl::fillFromFile(SndfileHandle& file)
     };
 }
 
-fill_t psl::fillFromOperator(op_t f, Signal* lhs, Signal* rhs)
+fill_t psl::fillFromOperator(op_ta f, Signal* lhs, Signal* rhs)
 {
     std::shared_ptr<bool> moreP(new bool(true));
     
@@ -101,8 +101,40 @@ fill_t psl::fillFromOperator(op_t f, Signal* lhs, Signal* rhs)
 	
 	    return *moreP;
 	}
+	
 	else {
-	    
+	    std::cout << "ERROR fillBuffer" << std::endl;  
+	    return *moreP = false;
+	}
+    };
+}
+
+fill_t psl::fillFromOperator(op_tb f, Signal* lhs)
+{
+    std::shared_ptr<bool> moreP(new bool(true));
+    
+
+    return [lhs, moreP, f](buffer_t* bufferP, bool B)
+    {
+	bool l_ok = lhs->fillBuffer(B);
+
+	int stopPos = lhs->buffer_.size();
+	int channels = lhs->channels();
+	if (l_ok) 
+	{
+	    for (int s = 0; s < stopPos; s++)
+	    {
+		(*bufferP)[s] = std::vector<std::complex<double>>(channels);
+		for (int c = 0; c < channels; c++)
+		{
+		    (*bufferP)[s][c] = f(lhs->buffer_[s][c]);
+		}
+	    }
+	
+	    return *moreP;
+	}
+	
+	else {
 	    std::cout << "ERROR fillBuffer" << std::endl;  
 	    return *moreP = false;
 	}

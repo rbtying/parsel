@@ -10,7 +10,8 @@ namespace psl
     
     fill_t fillFromFile(SndfileHandle& file);
 
-    fill_t fillFromOperator(op_t, Signal* lhs, Signal* rhs);
+    fill_t fillFromOperator(op_ta, Signal* lhs, Signal* rhs);
+    fill_t fillFromOperator(op_tb, Signal* lhs);
 
     fill_t fillFromPhaseShift(utime_t delay, Signal* s);
 }
