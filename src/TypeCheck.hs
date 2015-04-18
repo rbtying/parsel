@@ -12,11 +12,19 @@ data Semantics  = Good
                 | NoMain
                 deriving (Show, Eq)
 
+
+data VarTree    = Empty
+                | Node  { index :: Int
+                        , scope :: VarTable
+                        , children :: [VarTree]
+                        }
+
+
 type VarTable = Map.Map Symbol VarData
 
 data VarData = VarData  { varType :: Type
                         , line :: Int
                         }
 
-typeCheck :: (VarTable, AST) -> Writer [Semantics] AST
+typeCheck :: (VarTree, AST) -> Writer [Semantics] AST
 typeCheck (table, ast) = writer (ast, [Good])
