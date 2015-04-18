@@ -13,14 +13,11 @@ def main():
     b = Builder(sys.argv[1], sys.argv[2])
     t = Tester(sys.argv[2], sys.argv[3], 0)
     onlyfiles = [ f for f in listdir("src") if isfile(join("src",f)) ]
-    print onlyfiles
     files = []
     for f in onlyfiles:
         if len(f.split(".")) == 2:
             if f.split(".")[1] == "hs":
                 files.append("src/" + f)
-    print files
-   #files = ["src/Generators2.hs", "src/Generators.hs", "src/AST.hs", "src/Main.hs"]
     times = []
     for f in files:
         times.append(os.stat(f).st_mtime)
