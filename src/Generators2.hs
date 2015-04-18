@@ -50,7 +50,7 @@ genExpr (Var (Symbol sym))
     | sym == "intervalMap"  = "psl::intervalMap"
     | otherwise     = sym
 
-genExpr (Lambda tsyms t expr) = "lambda tsyms t expr"
+genExpr (Lambda tsyms t expr) = genLambda tsyms expr
 
 genExpr (LetExp ds expr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}()"
     where   (decs, defs) = genDefs ds
@@ -58,7 +58,7 @@ genExpr (LetExp ds expr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}()"
             n = '\n'
 
 genExpr (Cond expr1 expr2 expr3) = "[&]() {\n" ++ cond ++ "\n}"
-    where   cond = "if(" ++ e1 ++ "()) {\n" ++ e2 ++ "}\nelse {\n" ++ e3 ++ "}"
+    where   cond = "if(" ++ e1 ++ "()) {\n" ++ e2 ++ "}\nelse {\n" ++ e3 ++ "}();"
             e1 = genExpr expr1
             e2 = "return " ++ genExpr expr2 ++ ";\n"
             e3 = "return " ++ genExpr expr3 ++ ";\n"
@@ -70,6 +70,7 @@ genRawExpr (Func expr exprs) = genExpr (Func expr exprs)
 genRawExpr (BinaryOp op expr1 expr2) = genExpr (BinaryOp op expr1 expr2)
 genRawExpr (UnaryOp op expr) = genExpr (UnaryOp op expr)
 genRawExpr (Str s) = s
+genRawExpr (Lambda tsyms t expr) = genExpr (Lambda tsyms t expr)
 genRawExpr e = genExpr e ++ "()"
 
 

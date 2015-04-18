@@ -49,9 +49,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
             (topdef, code, _) = genDef (VarDef (Tsym rt $ Symbol "out") expr)
         in (topdef, code, mainloop)
     | otherwise = 
-        let def = sym ++ " = " ++ lambda
-            lambda = "[&](" ++ args ++ ") {\nreturn " ++ genExpr expr ++ ";\n};\n"
-            args = intercalate ", " $ map genRawTsym tsyms
+        let def = sym ++ " = " ++ genLambda tsyms expr ++ ";\n"
             
             decl = (genTsym $ Tsym (FuncType argtypes rt) (Symbol sym)) ++ ";\n"
             argtypes = map (\ts -> let Tsym t _ = ts in t) tsyms
@@ -90,3 +88,10 @@ genRawType (ListType t) = "std::vector<" ++ genType t ++ ">"
 genRawType (TupleType ts) = "std::tuple<" ++ types ++ ">"
     where types = intercalate ", " $ map genType ts
 genRawType ft = genType ft
+
+
+genLambda :: Tsyms -> Expr -> [Char]
+genLambda tsyms expr = "[&](" ++ args ++ ") {\n " ++ body ++ "\n}"
+    where   args = intercalate ", " $ map genRawTsym tsyms
+            body = "return " ++ genExpr expr ++ ";"
+

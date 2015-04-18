@@ -22,7 +22,7 @@ main = do
         code =  if null errors
                 then generateCode newparse
                 else "Error: " ++ show errors
-    indent <- readProcess "astyle" [] code
+    indent <- return code --readProcess "astyle" [] code
     writeFile outfile indent
 
 

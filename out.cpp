@@ -29,13 +29,22 @@ int main(int argc, char **argv) {
                     }
                     else {
                         return []() { return 0.0; };
-                    }
+                    }()
                 };
-            }
+            }()
         };
     };
     leftRightFilter = [&](double cutoff) {
-        return fsignal(lambda tsyms t expr());
+        return fsignal([&](double f) {
+            return [&]() {
+                if(psl::lessThan(f(), cutoff())()) {
+                    return std::make_tuple([]() { return 0.0; }, []() { return 1.0; });
+                }
+                else {
+                    return std::make_tuple([]() { return 1.0; }, []() { return 0.0; });
+                }()
+            };
+        });
     };
     filterInterval = [&](interval input) {
         return [&]() {
@@ -71,4 +80,5 @@ int main(int argc, char **argv) {
     bool B = true;
     while(out().get(0)().fillBuffer(B))
         B = !B;
+    return 0;
 }
