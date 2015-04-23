@@ -4,7 +4,9 @@ main(input[char]) -> (signal) =
         signal p = thing(s)(s)
     in (m + p)
 
-thing(signal s) -> (signal) -> signal = \(signal i) -> signal = s
+thing(signal s) -> (signal) -> signal =
+    let t(signal s) -> signal = \(signal i) -> signal = s
+    in t
 
 filterInterval(interval input) -> interval =
     let freq thing = 1000Hz cutoff(time t) -> freq = envelope(0, 10s, t) * thing in

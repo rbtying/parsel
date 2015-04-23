@@ -32,11 +32,11 @@ type StructData = Map.Map Type (Map.Map Symbol Type)
 typeCheck :: (VarTree, StructData, AST) -> Writer [Semantics] AST
 typeCheck (vt, sd, ast) = writer (ast, [Good])
 --typeCheck (vt, sd, ast) = mapM (checkTopDef vt sd) ast
-
+--
 --checkTopDef :: VarTree -> StructData -> TopDef -> Writer [Semantics] TopDef
 --checkTopDef vt sd (Def d) = checkDef vt sd d >>= return . Def
 --checkTopDef vt sd (Struc sym tsyms) = writer ((Struct sym tsyms), [Good])
-
+--
 --checkDef :: VarTree -> StructData -> Def -> Writer [Semantics] Def
 --checkDef vt sd (FuncDef sym tsyms t expr)
 --    | exprType == t = exprCheck >>= return . exprToDef
@@ -47,19 +47,25 @@ typeCheck (vt, sd, ast) = writer (ast, [Good])
 --            exprCheck = checkExpr vt sd newExpr
 --            exprToDef = FuncDef sym tsyms t
 --            def = exprToDef expr
-
-checkExpr :: VarTree -> StructData -> Expr -> Writer [Semantics] Expr
-checkExpr vt sd expr = writer (expr, [Good])
-
--- Finish getType
-
+--
+--checkExpr :: VarTree -> StructData -> Expr -> Writer [Semantics] Expr
+--checkExpr vt sd expr = writer (expr, [Good])
+--
+---- Finish getType
+--
 --getType :: VarTree -> StructData -> Expr -> (Type, Expr)
 --getType vt sd (Literal val unit)
---    | unit `endswith`   = (Type $ Symbol "time", Literal val unit)
-
-toTuple :: Expr -> Expr
-toTuple expr = Tuple [expr]
-
+--    | unit `endsWith` "s"  = (Type $ Symbol "time", Literal val unit)
+--    | unit `endsWith` "Hz"  = (Type $ Symbol "freq", Literal val unit)
+--getType vt sd 
+--
+--
+--endsWith :: [Char] -> [Char] -> Bool
+--endsWith str suf = not $ False `elem` zipWith (==) (reverse str) (reverse suf)
+--
+--toTuple :: Expr -> Expr
+--toTuple expr = Tuple [expr]
+--
 --fromTuple :: Expr -> Expr
 --fromTuple Tuple [expr] = expr
 --fromTuple e = e

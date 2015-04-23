@@ -7,8 +7,6 @@ import AST
 import Generators2
 
 
--- TODO: all functions take chunks
-
 -- sdecs, sdefs, topdecs, code, mainloop
 genTopDefs :: [TopDef] -> ([Char], [Char], [Char], [Char], [Char])
 genTopDefs [] = ("", "", "", "", "")
@@ -52,7 +50,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
             (topdef, code, _) = genDef (VarDef (Tsym rt $ Symbol "out") expr)
         in (topdef, code, mainloop)
     | otherwise = 
-        let def = sym ++ " = " ++ genLambda tsyms expr ++ ";\n"
+        let def = sym ++ " = " ++ genExpr (Lambda tsyms rt expr) ++ ";\n"
             
             decl = (genTsym $ Tsym (FuncType argtypes rt) (Symbol sym)) ++ ";\n"
             argtypes = map (\ts -> let Tsym t _ = ts in t) tsyms
@@ -65,8 +63,6 @@ genDef (VarDef tsym expr) = (decl, def, "")
 
 
 genType :: Type -> [Char]
-genType (FuncType ts r) = "psl::Chunk<" ++ types ++ ">"
-    where types = intercalate ", " $ map genRawType (r:ts)
 genType t = wrapInChunk . genRawType $ t
     where   wrapInChunk s = "psl::Chunk<" ++ s ++ ">"
 
@@ -86,4 +82,6 @@ genRawType (Type (Symbol s))
 genRawType (ListType t) = "std::vector<" ++ genType t ++ ">"
 genRawType (TupleType ts) = "std::tuple<" ++ types ++ ">"
     where types = intercalate ", " $ map genType ts
-genRawType ft = genType ft
+genRawType (FuncType argts rt) = "std::function<" ++ r ++ "(" ++ args ++ ")>"
+    where   r = genRawType rt
+            args = intercalate "," $ map genType argts

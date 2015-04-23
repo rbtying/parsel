@@ -16,7 +16,7 @@ genExpr (Literal val _) = toLambda $ show val
 
 genExpr (Str s) = toLambda s
 
--- this is WRONG! not lazy lewl
+-- this is WRONG! not lazy
 genExpr (Attr expr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
 
 genExpr (Tuple exprs) = toLambda $ "std::make_tuple(" ++ es ++ ")"
@@ -25,7 +25,7 @@ genExpr (Tuple exprs) = toLambda $ "std::make_tuple(" ++ es ++ ")"
 genExpr (List exprs) = "{" ++ intercalate ", " (map genExpr exprs) ++ "}"
 
 genExpr (BinaryOp binOp expr1 expr2) =
-    genExpr $ Func (Var . Symbol . opToFunc $ binOp) [expr1, expr2]
+    toLambda . genExpr $ Func (Var . Symbol . opToFunc $ binOp) [expr1, expr2]
     where   opToFunc Plus           = "psl::plus"
             opToFunc Minus          = "psl::minus"
             opToFunc Divide         = "psl::divide"
@@ -39,11 +39,11 @@ genExpr (BinaryOp binOp expr1 expr2) =
             opToFunc Or             = "psl::or"
 
 genExpr (UnaryOp unOp expr) =
-    genExpr $ Func (Var . Symbol . opToFunc $ unOp) [expr]
+    toLambda . genExpr $ Func (Var . Symbol . opToFunc $ unOp) [expr]
     where opToFunc Negate = "psl::negate"
 
-genExpr (Func expr exprs) = genExpr expr ++ "(" ++ es ++ ")"
-    where es = intercalate ", " $ map genExpr exprs
+genExpr (Func expr exprs) = toLambda $ "psl::apply(" ++ es ++ ")"
+    where es = intercalate ", " $ map genExpr (expr:exprs)
 
 genExpr (Var (Symbol sym))
     | sym == "sin"          = "psl::sin"
@@ -52,7 +52,7 @@ genExpr (Var (Symbol sym))
     | sym == "intervalMap"  = "psl::intervalMap"
     | otherwise     = sym
 
-genExpr (Lambda tsyms _ expr) = genLambda tsyms expr
+genExpr (Lambda tsyms _ expr) = toLambda $ genLambda tsyms expr
 
 genExpr (LetExp ds expr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
     where   (decs, defs) = genDefs ds
@@ -75,10 +75,6 @@ genReturn :: Expr -> [Char]
 genReturn expr = "return " ++ genRawExpr expr ++ ";"
 
 genRawExpr :: Expr -> [Char]
-genRawExpr (Func expr exprs) = genExpr (Func expr exprs)
-genRawExpr (BinaryOp op expr1 expr2) = genExpr (BinaryOp op expr1 expr2)
-genRawExpr (UnaryOp op expr) = genExpr (UnaryOp op expr)
-genRawExpr (Lambda tsyms t expr) = genExpr (Lambda tsyms t expr)
 genRawExpr e = genExpr e ++ "()"
 
 

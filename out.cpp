@@ -3,30 +3,30 @@
 
 
 
-psl::Chunk<interval, interval, fsignal> applyFilterF;
-psl::Chunk<psl::Signal, psl::Signal, psl::Chunk<interval, double, interval>, double> intervalMap;
-psl::Chunk<double, double, double, double> envelope;
-psl::Chunk<fsignal, double> leftRightFilter;
-psl::Chunk<interval, interval> filterInterval;
-psl::Chunk<psl::Chunk<psl::Signal, psl::Signal>, psl::Signal> thing;
+psl::Chunk<std::function<interval(psl::Chunk<interval>,psl::Chunk<fsignal>)>> applyFilterF;
+psl::Chunk<std::function<psl::Signal(psl::Chunk<psl::Signal>,psl::Chunk<std::function<interval(psl::Chunk<double>,psl::Chunk<interval>)>>,psl::Chunk<double>)>> intervalMap;
+psl::Chunk<std::function<double(psl::Chunk<double>,psl::Chunk<double>,psl::Chunk<double>)>> envelope;
+psl::Chunk<std::function<fsignal(psl::Chunk<double>)>> leftRightFilter;
+psl::Chunk<std::function<interval(psl::Chunk<interval>)>> filterInterval;
+psl::Chunk<std::function<std::function<psl::Signal(psl::Chunk<psl::Signal>)>(psl::Chunk<psl::Signal>)>> thing;
 psl::Chunk<std::tuple<psl::Chunk<psl::Signal>>> out;
 
 int main(int argc, char **argv) {
-    applyFilterF = [&](psl::Chunk<interval> input, psl::Chunk<fsignal> filter) {
-        return [&]() { return std::make_tuple(interval(psl::ft, (input()).stop, (input()).start)(psl::multiply(psl::ft(input), filter))); }();
-    };
-    intervalMap = [&](psl::Chunk<psl::Signal> input, psl::Chunk<interval, double, interval> f, psl::Chunk<double> width) {
-        return merge(map(chop(input, width), f), width);
-    };
-    envelope = [&](psl::Chunk<double> t, psl::Chunk<double> decay, psl::Chunk<double> attack) {
+    applyFilterF = [&]() { return [&](psl::Chunk<interval> input, psl::Chunk<fsignal> filter) {
+        return [&]() { return std::make_tuple([&]() { return psl::apply([&]() { return psl::apply(interval, psl::ft, (input()).stop, (input()).start); }, [&]() { return [&]() { return psl::apply(psl::multiply, [&]() { return psl::apply(psl::ft, input); }, filter); }; }); }); }();
+    }; };
+    intervalMap = [&]() { return [&](psl::Chunk<psl::Signal> input, psl::Chunk<std::function<interval(psl::Chunk<double>,psl::Chunk<interval>)>> f, psl::Chunk<double> width) {
+        return [&]() { return psl::apply(merge, [&]() { return psl::apply(map, [&]() { return psl::apply(chop, input, width); }, f); }, width); }();
+    }; };
+    envelope = [&]() { return [&](psl::Chunk<double> t, psl::Chunk<double> decay, psl::Chunk<double> attack) {
         return [&]() {
-            if(psl::lessThan(t, attack)) {
-                return psl::divide(t, attack);
+            if([&]() { return [&]() { return psl::apply(psl::lessThan, t, attack); }; }()) {
+                return [&]() { return [&]() { return psl::apply(psl::divide, t, attack); }; }();
             }
             else {
                 return [&]() {
-                    if(psl::lessThan(t, decay)) {
-                        return psl::minus([&]() { return 1.0; }, psl::divide([&]() { return std::make_tuple(psl::minus(t, attack)); }, decay));
+                    if([&]() { return [&]() { return psl::apply(psl::lessThan, t, decay); }; }()) {
+                        return [&]() { return [&]() { return psl::apply(psl::minus, [&]() { return 1.0; }, [&]() { return [&]() { return psl::apply(psl::divide, [&]() { return std::make_tuple([&]() { return [&]() { return psl::apply(psl::minus, t, attack); }; }); }, decay); }; }); }; }();
                     }
                     else {
                         return [&]() { return 0.0; }();
@@ -34,39 +34,47 @@ int main(int argc, char **argv) {
                 }();
             };
         }();
-    };
-    leftRightFilter = [&](psl::Chunk<double> cutoff) {
-        return fsignal([&](psl::Chunk<double> f) {
+    }; };
+    leftRightFilter = [&]() { return [&](psl::Chunk<double> cutoff) {
+        return [&]() { return psl::apply(fsignal, [&]() { return [&](psl::Chunk<double> f) {
                 return [&]() {
-                if(psl::lessThan(f, cutoff)) {
+                if([&]() { return [&]() { return psl::apply(psl::lessThan, f, cutoff); }; }()) {
                 return [&]() { return std::make_tuple([&]() { return 0.0; }, [&]() { return 1.0; }); }();
                 }
                 else {
                 return [&]() { return std::make_tuple([&]() { return 1.0; }, [&]() { return 0.0; }); }();
                 };
                 }();
-                });
-    };
-    filterInterval = [&](psl::Chunk<interval> input) {
+                }; }); }();
+    }; };
+    filterInterval = [&]() { return [&](psl::Chunk<interval> input) {
         return [&]() {
-            psl::Chunk<double, double> cutoff;
+            psl::Chunk<std::function<double(psl::Chunk<double>)>> cutoff;
             psl::Chunk<double> thing;
 
-            cutoff = [&](psl::Chunk<double> t) {
-                return psl::multiply(envelope(t, [&]() { return 10.0; }, [&]() { return 0.0; }), thing);
-            };
+            cutoff = [&]() { return [&](psl::Chunk<double> t) {
+                return [&]() { return [&]() { return psl::apply(psl::multiply, [&]() { return psl::apply(envelope, t, [&]() { return 10.0; }, [&]() { return 0.0; }); }, thing); }; }();
+            }; };
             thing = [&]() {
                 return [&]() { return 1000.0; }();
             };
 
-            return applyFilterF(input, leftRightFilter(cutoff((input()).start)));
+            return [&]() { return psl::apply(applyFilterF, input, [&]() { return psl::apply(leftRightFilter, [&]() { return psl::apply(cutoff, (input()).start); }); }); }();
         }();
-    };
-    thing = [&](psl::Chunk<psl::Signal> s) {
-        return [&](psl::Chunk<psl::Signal> i) {
-            return s();
-        };
-    };
+    }; };
+    thing = [&]() { return [&](psl::Chunk<psl::Signal> s) {
+        return [&]() {
+            psl::Chunk<std::function<psl::Signal(psl::Chunk<psl::Signal>)>> t;
+
+            t = [&]() { return [&](psl::Chunk<psl::Signal> s) {
+                return [&]() { return [&](psl::Chunk<psl::Signal> i) {
+                    return s();
+                }; }();
+            }; };
+
+            return t();
+        }();
+    }; };
     out = [&]() {
         return [&]() {
             psl::Chunk<psl::Signal> p;
@@ -74,16 +82,16 @@ int main(int argc, char **argv) {
             psl::Chunk<psl::Signal> s;
 
             p = [&]() {
-                return thing(s)(s);
+                return [&]() { return psl::apply([&]() { return psl::apply(thing, s); }, s); }();
             };
             m = [&]() {
-                return signal(sampleRate(s), psl::sin);
+                return [&]() { return psl::apply(signal, [&]() { return psl::apply(sampleRate, s); }, psl::sin); }();
             };
             s = [&]() {
-                return psl::intervalMap(signalFromWav(input), filterInterval, [&]() { return 1.0000001e-2; });
+                return [&]() { return psl::apply(psl::intervalMap, [&]() { return psl::apply(signalFromWav, input); }, filterInterval, [&]() { return 1.0000001e-2; }); }();
             };
 
-            return [&]() { return std::make_tuple(psl::plus(m, p)); }();
+            return [&]() { return std::make_tuple([&]() { return [&]() { return psl::apply(psl::plus, m, p); }; }); }();
         }();
     };
 
