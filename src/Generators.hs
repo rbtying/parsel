@@ -6,6 +6,9 @@ import Data.Ord
 import AST
 import Generators2
 
+
+-- TODO: all functions take chunks
+
 -- sdecs, sdefs, topdecs, code, mainloop
 genTopDefs :: [TopDef] -> ([Char], [Char], [Char], [Char], [Char])
 genTopDefs [] = ("", "", "", "", "")
@@ -56,7 +59,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
         in (decl, def, "")
 
 genDef (VarDef tsym expr) = (decl, def, "")
-    where   def = sym ++ " = [&]() {\nreturn " ++ genExpr expr ++  ";\n};\n"
+    where   def = sym ++ " = [&]() {\n" ++ genReturn expr ++  "\n};\n"
             Tsym _ (Symbol sym) = tsym
             decl = genTsym tsym ++ ";\n"
 
@@ -72,10 +75,6 @@ genTsym :: Tsym -> [Char]
 genTsym (Tsym t (Symbol s)) = genType t ++ " " ++ s
 
 
-genRawTsym :: Tsym -> [Char]
-genRawTsym (Tsym t (Symbol s)) = genRawType t ++ " " ++ s
-
-
 genRawType :: Type -> [Char]
 genRawType (Type (Symbol s))
     | s == "signal"     = "psl::Signal"
@@ -88,10 +87,3 @@ genRawType (ListType t) = "std::vector<" ++ genType t ++ ">"
 genRawType (TupleType ts) = "std::tuple<" ++ types ++ ">"
     where types = intercalate ", " $ map genType ts
 genRawType ft = genType ft
-
-
-genLambda :: Tsyms -> Expr -> [Char]
-genLambda tsyms expr = "[&](" ++ args ++ ") {\n " ++ body ++ "\n}"
-    where   args = intercalate ", " $ map genRawTsym tsyms
-            body = "return " ++ genExpr expr ++ ";"
-

@@ -1,23 +1,25 @@
 module Generators2 where
 
 import {-# SOURCE #-} Generators
-import Data.List
 import AST
+
+import Data.List
+
 
 genExpr :: Expr -> [Char]
 
--- Q: how are these types expressed in C ? (time literal?)
--- guard for each unit type? 
--- is this rhs of a definition?
--- A: we will use floats, and semantic analysis will add functions for "type"
---    conversions
-genExpr (Literal val unit) = constToLambda . show $ val
+genExpr (Literal val ('K':_)) = toLambda $ show (val * 1.0e3)
+genExpr (Literal val ('M':_)) = toLambda $ show (val * 1.0e6)
+genExpr (Literal val ('m':_)) = toLambda $ show (val * 1.0e-3)
+genExpr (Literal val ('u':_)) = toLambda $ show (val * 1.0e-6)
+genExpr (Literal val _) = toLambda $ show val
 
-genExpr (Str s) = constToLambda s
+genExpr (Str s) = toLambda s
 
+-- this is WRONG! not lazy lewl
 genExpr (Attr expr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
 
-genExpr (Tuple exprs) = "std::make_tuple(" ++ es ++ ")"
+genExpr (Tuple exprs) = toLambda $ "std::make_tuple(" ++ es ++ ")"
     where es = intercalate ", " $ map genExpr exprs
 
 genExpr (List exprs) = "{" ++ intercalate ", " (map genExpr exprs) ++ "}"
@@ -41,7 +43,7 @@ genExpr (UnaryOp unOp expr) =
     where opToFunc Negate = "psl::negate"
 
 genExpr (Func expr exprs) = genExpr expr ++ "(" ++ es ++ ")"
-    where es = intercalate ", " $ map genRawExpr exprs
+    where es = intercalate ", " $ map genExpr exprs
 
 genExpr (Var (Symbol sym))
     | sym == "sin"          = "psl::sin"
@@ -50,29 +52,35 @@ genExpr (Var (Symbol sym))
     | sym == "intervalMap"  = "psl::intervalMap"
     | otherwise     = sym
 
-genExpr (Lambda tsyms t expr) = genLambda tsyms expr
+genExpr (Lambda tsyms _ expr) = genLambda tsyms expr
 
-genExpr (LetExp ds expr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}()"
+genExpr (LetExp ds expr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
     where   (decs, defs) = genDefs ds
-            out = "return " ++ genExpr expr ++ ";"
+            out = genReturn expr
             n = '\n'
 
 genExpr (Cond expr1 expr2 expr3) = "[&]() {\n" ++ cond ++ "\n}"
-    where   cond = "if(" ++ e1 ++ "()) {\n" ++ e2 ++ "}\nelse {\n" ++ e3 ++ "}();"
-            e1 = genExpr expr1
-            e2 = "return " ++ genExpr expr2 ++ ";\n"
-            e3 = "return " ++ genExpr expr3 ++ ";\n"
+    where   cond = "if(" ++ e1 ++ ") {\n" ++ e2 ++ "\n}\nelse {\n" ++ e3 ++ "\n};"
+            e1 = genRawExpr expr1
+            e2 = genReturn expr2
+            e3 = genReturn expr3
 
+
+genLambda :: Tsyms -> Expr -> [Char]
+genLambda tsyms expr = "[&](" ++ args ++ ") {\n " ++ body ++ "\n}"
+    where   args = intercalate ", " $ map genTsym tsyms
+            body = genReturn expr
+
+genReturn :: Expr -> [Char]
+genReturn expr = "return " ++ genRawExpr expr ++ ";"
 
 genRawExpr :: Expr -> [Char]
-genRawExpr (Literal val unit) = show val
 genRawExpr (Func expr exprs) = genExpr (Func expr exprs)
 genRawExpr (BinaryOp op expr1 expr2) = genExpr (BinaryOp op expr1 expr2)
 genRawExpr (UnaryOp op expr) = genExpr (UnaryOp op expr)
-genRawExpr (Str s) = s
 genRawExpr (Lambda tsyms t expr) = genExpr (Lambda tsyms t expr)
 genRawExpr e = genExpr e ++ "()"
 
 
-constToLambda :: [Char] -> [Char]
-constToLambda e = "[]() { return " ++ e ++ "; }"
+toLambda :: [Char] -> [Char]
+toLambda e = "[&]() { return " ++ e ++ "; }"

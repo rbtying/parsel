@@ -1,7 +1,10 @@
 main(input[char]) -> (signal) = 
     let signal s = intervalMap(10ms, filterInterval, signalFromWav(input))
         signal m = signal with sin, sampleRate(s)
-    in l + s
+        signal p = thing(s)(s)
+    in (m + p)
+
+thing(signal s) -> (signal) -> signal = \(signal i) -> signal = s
 
 filterInterval(interval input) -> interval =
     let freq thing = 1000Hz cutoff(time t) -> freq = envelope(0, 10s, t) * thing in

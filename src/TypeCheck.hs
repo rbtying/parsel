@@ -14,7 +14,7 @@ data Semantics  = Good
                 deriving (Show, Eq)
 
 data VarTree    = Empty
-                | Node  { index :: Int
+                | Node  {index :: Int
                         , scope :: VarTable
                         , children :: [VarTree]
                         }
@@ -28,14 +28,38 @@ data VarData = VarData  { varType :: Type
 
 type StructData = Map.Map Type (Map.Map Symbol Type)
 
-
+ 
 typeCheck :: (VarTree, StructData, AST) -> Writer [Semantics] AST
-typeCheck (Empty, sd, ast) = writer (ast, [Good])
-typeCheck ((Node index scope children), sd, ast) = writer (ast, [Good])
+typeCheck (vt, sd, ast) = writer (ast, [Good])
+--typeCheck (vt, sd, ast) = mapM (checkTopDef vt sd) ast
 
---checkExpr :: VarTree -> StructData -> Expr -> Writer [Semantics] AST
---checkExpr tree sd (Literal _ _) = writer (ast, [Good])
---checkExpr tree sd (Attr expr sym) = writer (ast, [Good])
+--checkTopDef :: VarTree -> StructData -> TopDef -> Writer [Semantics] TopDef
+--checkTopDef vt sd (Def d) = checkDef vt sd d >>= return . Def
+--checkTopDef vt sd (Struc sym tsyms) = writer ((Struct sym tsyms), [Good])
 
---getType :: Expr -> Type
---getType _ = Literal "" ""
+--checkDef :: VarTree -> StructData -> Def -> Writer [Semantics] Def
+--checkDef vt sd (FuncDef sym tsyms t expr)
+--    | exprType == t = exprCheck >>= return . exprToDef
+--    | exprType == TupleType [t] = exprCheck >>= return . exprToDef . toTuple
+--    | TupleType [exprType] == t = exprCheck >>= return . exprToDef . fromTuple
+--    | otherwise = exprCheck >>= writer (def, [TypeError t exprType])
+--    where   (exprType, newExpr) = getType vt sd expr
+--            exprCheck = checkExpr vt sd newExpr
+--            exprToDef = FuncDef sym tsyms t
+--            def = exprToDef expr
+
+checkExpr :: VarTree -> StructData -> Expr -> Writer [Semantics] Expr
+checkExpr vt sd expr = writer (expr, [Good])
+
+-- Finish getType
+
+--getType :: VarTree -> StructData -> Expr -> (Type, Expr)
+--getType vt sd (Literal val unit)
+--    | unit `endswith`   = (Type $ Symbol "time", Literal val unit)
+
+toTuple :: Expr -> Expr
+toTuple expr = Tuple [expr]
+
+--fromTuple :: Expr -> Expr
+--fromTuple Tuple [expr] = expr
+--fromTuple e = e
