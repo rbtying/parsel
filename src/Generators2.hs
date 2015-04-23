@@ -2,6 +2,7 @@ module Generators2 where
 
 import {-# SOURCE #-} Generators
 import AST
+import ExprConverter
 
 import Data.List
 
@@ -16,34 +17,23 @@ genExpr (Literal val _) = toLambda $ show val
 
 genExpr (Str s) = toLambda s
 
--- this is WRONG! not lazy
-genExpr (Attr expr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
+-- this is WRONG! not lazy. but should still compile.
+genExpr (Attr iexpr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
+    where expr = fst iexpr
 
-genExpr (Tuple exprs) = toLambda $ "std::make_tuple(" ++ es ++ ")"
-    where es = intercalate ", " $ map genExpr exprs
+genExpr (Tuple iexprs) = toLambda $ "std::make_tuple(" ++ es ++ ")"
+    where es = intercalate ", " $ map (genExpr . fst) iexprs
 
-genExpr (List exprs) = "{" ++ intercalate ", " (map genExpr exprs) ++ "}"
+genExpr (List iexprs) = "{" ++ intercalate ", " (map (genExpr . fst) iexprs) ++ "}"
 
-genExpr (BinaryOp binOp expr1 expr2) =
-    toLambda . genExpr $ Func (Var . Symbol . opToFunc $ binOp) [expr1, expr2]
-    where   opToFunc Plus           = "psl::plus"
-            opToFunc Minus          = "psl::minus"
-            opToFunc Divide         = "psl::divide"
-            opToFunc Multiply       = "psl::multiply"
-            opToFunc LessThan       = "psl::lessThan"
-            opToFunc GreaterThan    = "psl::greaterThan"
-            opToFunc LessThanEq     = "psl::lessThanEq"
-            opToFunc GreaterThanEq  = "psl::greaterThanEq"
-            opToFunc Eq             = "psl::eq"
-            opToFunc And            = "psl::and"
-            opToFunc Or             = "psl::or"
+genExpr (BinaryOp binOp ie1 ie2) = toLambda . genExpr $ binOpToFunc binOp ie1 ie2
 
-genExpr (UnaryOp unOp expr) =
-    toLambda . genExpr $ Func (Var . Symbol . opToFunc $ unOp) [expr]
+genExpr (UnaryOp unOp iexpr) =
+    toLambda . genExpr $ Func ((Var . Symbol . opToFunc $ unOp), -1) [iexpr]
     where opToFunc Negate = "psl::negate"
 
-genExpr (Func expr exprs) = toLambda $ "psl::apply(" ++ es ++ ")"
-    where es = intercalate ", " $ map genExpr (expr:exprs)
+genExpr (Func iexpr iexprs) = toLambda $ "psl::apply(" ++ es ++ ")"
+    where es = intercalate ", " $ map (genExpr . fst) (iexpr:iexprs)
 
 genExpr (Var (Symbol sym))
     | sym == "sin"          = "psl::sin"
@@ -52,18 +42,20 @@ genExpr (Var (Symbol sym))
     | sym == "intervalMap"  = "psl::intervalMap"
     | otherwise     = sym
 
-genExpr (Lambda tsyms _ expr) = toLambda $ genLambda tsyms expr
+genExpr (Lambda tsyms _ iexpr) = toLambda $ genLambda tsyms expr
+    where expr = fst iexpr
 
-genExpr (LetExp ds expr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
+genExpr (LetExp ds iexpr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
     where   (decs, defs) = genDefs ds
             out = genReturn expr
             n = '\n'
+            expr = fst iexpr
 
-genExpr (Cond expr1 expr2 expr3) = "[&]() {\n" ++ cond ++ "\n}"
+genExpr (Cond iexpr1 iexpr2 iexpr3) = "[&]() {\n" ++ cond ++ "\n}"
     where   cond = "if(" ++ e1 ++ ") {\n" ++ e2 ++ "\n}\nelse {\n" ++ e3 ++ "\n};"
-            e1 = genRawExpr expr1
-            e2 = genReturn expr2
-            e3 = genReturn expr3
+            e1 = genRawExpr $ fst iexpr1
+            e2 = genReturn $ fst iexpr2
+            e3 = genReturn $ fst iexpr3
 
 
 genLambda :: Tsyms -> Expr -> [Char]

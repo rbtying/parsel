@@ -5,24 +5,29 @@ type AST        = [TopDef]
 data TopDef     = Def Def
                 | Struct Symbol Tsyms
 
-data Def        = FuncDef Symbol Tsyms Type Expr
-                | VarDef Tsym Expr
+data Def        = FuncDef Symbol Tsyms Type IndExpr
+                | VarDef Tsym IndExpr
                 deriving (Show)
 
 data Symbol     = Symbol String
                 deriving (Show, Eq)
 
+instance Ord Symbol where
+    (Symbol sym1) `compare` (Symbol sym2) = sym1 `compare` sym2
+
+type IndExpr    = (Expr, Int)
+
 data Expr       = Literal Float Unit
-                | Attr Expr Symbol
-                | Tuple [Expr]
-                | List [Expr]
-                | BinaryOp BinOp Expr Expr
-                | UnaryOp UnOp Expr
-                | Func Expr [Expr]
+                | Attr IndExpr Symbol
+                | Tuple [IndExpr]
+                | List [IndExpr]
+                | BinaryOp BinOp IndExpr IndExpr
+                | UnaryOp UnOp IndExpr
+                | Func IndExpr [IndExpr]
                 | Var Symbol
-                | Lambda Tsyms Type Expr
-                | LetExp [Def] Expr
-                | Cond Expr Expr Expr
+                | Lambda Tsyms Type IndExpr
+                | LetExp [Def] IndExpr
+                | Cond IndExpr IndExpr IndExpr
                 | Str [Char]
                 deriving (Show)
 
@@ -54,3 +59,12 @@ data Type       = Type Symbol
                 | TupleType [Type]
                 | FuncType [Type] Type
                 deriving (Show, Eq)
+instance Ord Type where
+    (Type sym1) `compare` (Type sym2) =
+        sym1 `compare` sym2
+    (ListType t1) `compare` (ListType t2) =
+        t1 `compare` t2
+    (TupleType ts1) `compare` (TupleType ts2) =
+        ts1 `compare` ts2
+    (FuncType ts1 t1) `compare` (FuncType ts2 t2) =
+        (t1:ts1) `compare` (t2:ts2)

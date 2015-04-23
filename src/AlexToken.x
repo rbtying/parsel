@@ -1,6 +1,6 @@
 {
 {-# OPTIONS_GHC -w #-}
-module AlexToken (Token(..),scanTokens, token_posn) where
+module AlexToken (Token(..), scanTokens, getInd, getString, getNum) where
 
 import Data.List
 import Data.Char
@@ -9,52 +9,50 @@ import Control.Arrow
 
 %wrapper "posn"
 
-$digit = 0-9
-$alpha = [a-zA-Z]
-$eol   = [\n]
-@num = [0-9]+(\.[0-9]+)?([KMmu]?(Hz|s|min|hour))?
+$digit  = 0-9
+$alpha  = [a-zA-Z]
+$eol    = [\n]
+@num    = [0-9]+(\.[0-9]+)?([KMmu]?(Hz|s|min|hour))?
 
 tokens :-
 
   "#".*                         ;
   $white+                       ;
   $eol+                         ;
-  struct                        { tok (\p s -> TokenStruct p) }
-  let                           { tok (\p s -> TokenLet p) }
-  with                          { tok (\p s -> TokenWith p) }
-  in                            { tok (\p s -> TokenIn p) }
-  if                            { tok (\p s -> TokenIf p) }
-  else                          { tok (\p s -> TokenElse p) }
-  then                          { tok (\p s -> TokenThen p) }
-  "->"                          { tok (\p s -> TokenArrow p) }
-  and                           { tok (\p s -> TokenAnd p) }
-  or                            { tok (\p s -> TokenOr p) }
-  "<="                          { tok (\p s -> TokenLessThanEq p) }
-  ">="                          { tok (\p s -> TokenGreaterThanEq p) }
-  "!="                          { tok (\p s -> TokenNotEq p) }
-  "=="                          { tok (\p s -> TokenEqEq p) }
-  \=                            { tok (\p s -> TokenEq p) }
-  \\                            { tok (\p s -> TokenLambda p) }
-  \!                            { tok (\p s -> TokenNot p) }
-  \+                            { tok (\p s -> TokenAdd p) }
-  \-                            { tok (\p s -> TokenSub p) }
-  \*                            { tok (\p s -> TokenMul p) }
-  \/                            { tok (\p s -> TokenDiv p) }
-  \<                            { tok (\p s -> TokenLessThan p) }
-  \>                            { tok (\p s -> TokenGreaterThan p) }
-  \[                            { tok (\p s -> TokenLBracket p) }
-  \]                            { tok (\p s -> TokenRBracket p) }
-  \(                            { tok (\p s -> TokenLParen p) }
-  \)                            { tok (\p s -> TokenRParen p) }
-  @num                          { tok (\p s -> TokenNum p (toNum s)) }
-  $alpha [$alpha $digit \_ \']* { tok (\p s -> TokenSym p s) }
-  [\,]                          { tok (\p s -> TokenComma p) }
-  [\.]                          { tok (\p s -> TokenDot p) }
-  \"[^\\\"]*\"                  { tok (\p s -> TokenString p s) }
+  struct                        { \p s -> TokenStruct p }
+  let                           { \p s -> TokenLet p }
+  with                          { \p s -> TokenWith p }
+  in                            { \p s -> TokenIn p }
+  if                            { \p s -> TokenIf p }
+  else                          { \p s -> TokenElse p }
+  then                          { \p s -> TokenThen p }
+  "->"                          { \p s -> TokenArrow p }
+  and                           { \p s -> TokenAnd p }
+  or                            { \p s -> TokenOr p }
+  "<="                          { \p s -> TokenLessThanEq p }
+  ">="                          { \p s -> TokenGreaterThanEq p }
+  "!="                          { \p s -> TokenNotEq p }
+  "=="                          { \p s -> TokenEqEq p }
+  \=                            { \p s -> TokenEq p }
+  \\                            { \p s -> TokenLambda p }
+  \!                            { \p s -> TokenNot p }
+  \+                            { \p s -> TokenAdd p }
+  \-                            { \p s -> TokenSub p }
+  \*                            { \p s -> TokenMul p }
+  \/                            { \p s -> TokenDiv p }
+  \<                            { \p s -> TokenLessThan p }
+  \>                            { \p s -> TokenGreaterThan p }
+  \[                            { \p s -> TokenLBracket p }
+  \]                            { \p s -> TokenRBracket p }
+  \(                            { \p s -> TokenLParen p }
+  \)                            { \p s -> TokenRParen p }
+  @num                          { \p s -> TokenNum p (toNum s) }
+  $alpha [$alpha $digit \_ \']* { \p s -> TokenSym p s }
+  [\,]                          { \p s -> TokenComma p }
+  [\.]                          { \p s -> TokenDot p }
+  \"[^\\\"]*\"                  { \p s -> TokenString p s }
 
 {
-
-tok f p s = f p s
 
 data Token = TokenStruct AlexPosn
            | TokenLet AlexPosn
@@ -129,5 +127,18 @@ token_posn (TokenSym p _) = p
 token_posn (TokenNum p _) = p
 token_posn (TokenNot p) = p
 token_posn (TokenString p _) = p
+
+getInd :: Token -> Int
+getInd t = i
+    where (AlexPn i _ _) = token_posn t
+
+getString :: Token -> String
+getString (TokenString _ s) = s
+getString (TokenSym _ s) = s
+getString _ = ""
+
+getNum :: Token -> (Float, String)
+getNum (TokenNum _ n) = n
+getNum _ = (0, "")
 
 }

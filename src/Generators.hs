@@ -39,7 +39,7 @@ genDefs (def:defs) = (topdef ++ topdefs, code ++ codes)
 
 -- topdecs, code, mainloop
 genDef :: Def -> ([Char], [Char], [Char])
-genDef (FuncDef (Symbol sym) tsyms rt expr)
+genDef (FuncDef (Symbol sym) tsyms rt iexpr)
     | sym == "main" = 
         let mainloop = "bool B = true;\nwhile(" ++ conds ++ ")\nB = !B;\n"
             conds = intercalate " && " $ map cond [1..numSigs]
@@ -47,19 +47,20 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
             numSigs = length ts
             TupleType ts = rt
 
-            (topdef, code, _) = genDef (VarDef (Tsym rt $ Symbol "out") expr)
+            (topdef, code, _) = genDef (VarDef (Tsym rt $ Symbol "out") iexpr)
         in (topdef, code, mainloop)
     | otherwise = 
-        let def = sym ++ " = " ++ genExpr (Lambda tsyms rt expr) ++ ";\n"
+        let def = sym ++ " = " ++ genExpr (Lambda tsyms rt iexpr) ++ ";\n"
             
             decl = (genTsym $ Tsym (FuncType argtypes rt) (Symbol sym)) ++ ";\n"
             argtypes = map (\ts -> let Tsym t _ = ts in t) tsyms
         in (decl, def, "")
 
-genDef (VarDef tsym expr) = (decl, def, "")
+genDef (VarDef tsym iexpr) = (decl, def, "")
     where   def = sym ++ " = [&]() {\n" ++ genReturn expr ++  "\n};\n"
             Tsym _ (Symbol sym) = tsym
             decl = genTsym tsym ++ ";\n"
+            expr = fst iexpr
 
 
 genType :: Type -> [Char]

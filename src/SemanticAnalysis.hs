@@ -25,5 +25,5 @@ findGoodMainDef (FuncDef (Symbol sym) tsyms rt expr)
 	 where TupleType ts = rt
 findGoodMainDef (VarDef tsym expr) = False
 
-defCheck :: AST -> Writer [Semantics] (VarTree, StructData, AST)
-defCheck ast = writer ((Empty, Map.empty, ast), [Good]) 
+defCheck :: AST -> Writer [Semantics] (ExprScope, StructData, AST)
+defCheck ast = writer ((Map.empty, Map.empty, ast), [Good]) 
