@@ -12,7 +12,9 @@ semAnalysis :: AST -> Writer [Semantics] AST
 semAnalysis ast = defCheck ast >>= typeCheck >>= mainCheck
 
 mainCheck :: AST -> Writer [Semantics] AST
-mainCheck ast = if (length (filter findGoodMain ast)) == 1 then writer (ast, [Good]) else writer (ast, [NoMain])
+mainCheck ast
+    | (length (filter findGoodMain ast)) == 1 = writer(ast, [Good])
+    | otherwise = writer(ast, [NoMain])
 
 findGoodMain :: TopDef -> Bool
 findGoodMain (Def d) = findGoodMainDef d 
