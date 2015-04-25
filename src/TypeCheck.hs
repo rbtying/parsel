@@ -6,8 +6,7 @@ import ExprConverter
 import Control.Monad.Writer
 import qualified Data.Map as Map
 
-data Semantics  = Good
-                | WrongType Type Type
+data Error  = WrongType Type Type
                 | MisusedType [Char]
                 | Undef Symbol
                 | Multdef Symbol
@@ -36,45 +35,54 @@ data VarData = VarData  { varType :: Type
 type StructData = Map.Map Type (Map.Map Symbol Type)
 
  
-typeCheck :: (ExprScope, StructData, AST) -> Writer [Semantics] AST
+typeCheck :: (ExprScope, StructData, AST) -> Writer [Error] AST
 typeCheck (es, sd, ast) = mapM (checkTopDef es sd) ast
 
-checkTopDef :: ExprScope -> StructData -> TopDef -> Writer [Semantics] TopDef
+checkTopDef :: ExprScope -> StructData -> TopDef -> Writer [Error] TopDef
 checkTopDef es sd (Def d) = checkDef es sd d >>= return . Def
-checkTopDef _ _ (Struct sym tsyms) = writer ((Struct sym tsyms), [Good])
+checkTopDef _ _ (Struct sym tsyms) = return $ Struct sym tsyms
 
-checkDef :: ExprScope -> StructData -> Def -> Writer [Semantics] Def
-checkDef es sd (FuncDef sym tsyms t iexpr) = checkTypes es sd t iexpr >>= toFuncDef
-    where   (expr, i) = iexpr
-            toFuncDef e = writer (FuncDef sym tsyms t (e, i), [Good])
-checkDef es sd (VarDef (Tsym t sym) iexpr) = checkTypes es sd t iexpr >>= toVarDef
-    where   (expr, i) = iexpr
-            toVarDef e = writer (VarDef (Tsym t sym) (e, i), [Good])
+checkDef :: ExprScope -> StructData -> Def -> Writer [Error] Def
+checkDef es sd (FuncDef sym tsyms t iexpr) =
+    do  iexpr' <- checkExpr es sd iexpr
+        iexpr'' <- attemptCast es sd t iexpr'
+        return $ FuncDef sym tsyms t iexpr''
+checkDef es sd (VarDef (Tsym t sym) iexpr) =
+    do  iexpr' <- checkExpr es sd iexpr
+        iexpr'' <- attemptCast es sd t iexpr'
+        return $ VarDef (Tsym t sym) iexpr''
 
-checkTypes :: ExprScope -> StructData -> Type -> IndExpr -> Writer [Semantics] Expr
-checkTypes es sd t iexpr = checkWithType typeM
-    where   checkWithType (Right exprType)
-                | exprType == t =
-                    exprCheck
-                | exprType == TupleType [t] =
-                    exprCheck >>= return . toTuple . addI
-                | TupleType [exprType] == t  =
-                    exprCheck >>= return . fromTuple
+
+checkExpr :: ExprScope -> StructData -> IndExpr -> Writer [Error] IndExpr
+checkExpr es sd (Attr iexpr sym, _) = checkExpr es sd iexpr
+checkExpr es sd (Tuple iexprs, i) = mapM (checkExpr es sd) iexprs >>= newTuple 
+    where newTuple ies = return (Tuple ies, i)
+checkExpr es sd (List iexprs, i)
+    | length iexprs > 0 = 
+        do  let tM = getType es sd $ head iexprs
+                checkAndCast (Right t) e = checkExpr es sd e >>= attemptCast es sd t
+                checkAndCast (Left err) e = writer (e, [MisusedType err])
+                newList ies = return (List ies, i)
+            mapM (checkAndCast tM) iexprs >>= newList
+    | otherwise = return list
+    where list = (List iexprs, i)
+-- checkExpr es sd (BinaryOp op ie1 ie2, i)
+checkExpr es sd iexpr = return iexpr
+
+
+
+attemptCast :: ExprScope -> StructData -> Type -> IndExpr -> Writer [Error] IndExpr
+attemptCast es sd t iexpr = attemptCast' $ getType es sd iexpr
+    where   attemptCast' (Right et)
+                | et == t =
+                    return iexpr
+                | et == TupleType [t] =
+                    return $ toTuple iexpr
+                | TupleType [et] == t =
+                    return $ fromTuple iexpr
                 | otherwise =
-                    exprCheck >>= \_ -> writer (expr, [WrongType t exprType])
-                where   exprCheck = checkExpr es sd expr
-            checkWithType (Left err) = writer (expr, [MisusedType err])
-
-            typeM = getType es sd iexpr
-            (expr, i) = iexpr
-            addI e = (e, i)
-
-
-
-
-checkExpr :: ExprScope -> StructData -> Expr -> Writer [Semantics] Expr
-checkExpr _ _ expr = writer (expr, [Good])
-
+                    writer (iexpr, [WrongType t et])
+            attemptCast' (Left err) = writer (iexpr, [MisusedType err])
 
 
 
@@ -136,9 +144,10 @@ isNumber _ = False
 endsWith :: [Char] -> [Char] -> Bool
 endsWith str suf = not $ False `elem` zipWith (==) (reverse str) (reverse suf)
 
-toTuple :: IndExpr -> Expr
-toTuple iexpr = Tuple [iexpr]
+toTuple :: IndExpr -> IndExpr
+toTuple (expr, i) = (Tuple [iexpr], i)
+    where iexpr = (expr, i)
 
-fromTuple :: Expr -> Expr
-fromTuple (Tuple [iexpr]) = fst iexpr
-fromTuple e = e
+fromTuple :: IndExpr -> IndExpr
+fromTuple (Tuple [iexpr], _) = iexpr
+fromTuple iexpr = iexpr

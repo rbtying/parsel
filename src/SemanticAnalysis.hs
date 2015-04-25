@@ -8,13 +8,13 @@ import Control.Monad.Writer
 import qualified Data.Map as Map
 
 
-semAnalysis :: AST -> Writer [Semantics] AST
+semAnalysis :: AST -> Writer [Error] AST
 semAnalysis ast = defCheck ast >>= typeCheck >>= mainCheck
 
-mainCheck :: AST -> Writer [Semantics] AST
+mainCheck :: AST -> Writer [Error] AST
 mainCheck ast
-    | (length (filter findGoodMain ast)) == 1 = writer(ast, [Good])
-    | otherwise = writer(ast, [NoMain])
+    | (length (filter findGoodMain ast)) == 1 = return ast
+    | otherwise = writer (ast, [NoMain])
 
 findGoodMain :: TopDef -> Bool
 findGoodMain (Def d) = findGoodMainDef d 
@@ -27,5 +27,5 @@ findGoodMainDef (FuncDef (Symbol sym) tsyms rt expr)
 	 where TupleType ts = rt
 findGoodMainDef (VarDef tsym expr) = False
 
-defCheck :: AST -> Writer [Semantics] (ExprScope, StructData, AST)
-defCheck ast = writer ((Map.empty, Map.empty, ast), [Good]) 
+defCheck :: AST -> Writer [Error] (ExprScope, StructData, AST)
+defCheck ast = return (Map.empty, Map.empty, ast)

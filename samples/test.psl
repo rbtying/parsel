@@ -1,1 +1,4 @@
-main(input[char]) -> (signal) = let a[freq] = [3Hz] in a
+main(input[char]) -> (signal) =
+    let f(int x) -> int = x + 1
+        g(int x) -> int = 2 * x
+    in f(g(5))

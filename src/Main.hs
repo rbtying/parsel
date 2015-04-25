@@ -17,8 +17,7 @@ main = do
     input <- readFile infile
     let tokens = AlexToken.scanTokens input
         parse = HappyParser.parse tokens
-        (newparse, semantics) = runWriter $ semAnalysis parse
-        errors = filter (/= Good) semantics 
+        (newparse, errors) = runWriter $ semAnalysis parse
         code =  if null errors
                 then generateCode newparse
                 else "Error: " ++ show errors
