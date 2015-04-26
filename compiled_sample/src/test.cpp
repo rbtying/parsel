@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstdlib>
-
+#include <fstream>
 #include "fft4g.c"
 #include "outputs.h"
 
@@ -11,10 +11,18 @@ int main(int argc, char **argv)
         std::cout << "Give a file please\n";
         std::exit(1);
     }
+   
     psl::Signal insignal((std::string(argv[1])));
+    
+    psl::Signal insignal2 = ((std::string(argv[2])));   
+  
+    // this doesn't work... why?
+    psl::Signal newSignal = insignal.add(&insignal2);
 
-    psl::Signal outsignal(psl::toWavFile(&insignal, "output.wav", 5),
-            insignal.sampleRate(), insignal.channels());
+    psl::Signal outsignal1(psl::toWavFile(&newSignal, "output.wav", 5),
+            newSignal.sampleRate(), newSignal.channels());
+    
+    
 
     std::function<int(int, int)> thing;
     std::function<int(int)> thing2;
@@ -27,6 +35,6 @@ int main(int argc, char **argv)
 
     // main loop
     bool B = true;
-    while(outsignal.fillBuffer(B))
+    while(outsignal1.fillBuffer(B))
         B = !B;
 }
