@@ -2,6 +2,7 @@ module SemanticAnalysis where
 
 import AST
 import TypeCheck
+import GlobalScope
 
 import Control.Monad.Writer
 
@@ -34,4 +35,4 @@ findGoodMain (Def d) = isGoodMain d
 findGoodMain (Struct _ _) = False
 
 defCheck :: AST -> Writer [Error] (VarScope, StructData, AST)
-defCheck ast = return (Map.empty, Map.empty, ast)
+defCheck ast = return (builtInScope, builtInStructData, ast)
