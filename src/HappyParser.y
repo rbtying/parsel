@@ -77,24 +77,26 @@ Exprs : Expr %prec expr                             { [$1] }
       | Exprs ',' Expr                              { $3 : $1 }
 
 Expr : Literal                                      { $1 }
-     | Expr '.' Symbol                              { (Attr $1 $3, getInd $2) }
-     | '(' Exprs ')'                                { (Tuple $2, getInd $1) }
-     | '[' Exprs ']'                                { (List $2, getInd $1) }
-     | sym                                          { (Var . Symbol $ getString $1, getInd $1) }
+     | Expr '.' Symbol                              { Attr $1 $3 }
+     | '(' Exprs ')'                                { Tuple $2 }
+     | '[' Exprs ']'                                { List $2 }
+     | sym                                          { let sym = Symbol $ getString $1
+                                                      in Var sym $ getInd $1 }
      | ApplyFunc                                    { $1 }
      | Lambda                                       { $1 }
      | LetExp                                       { $1 }
-     | if Expr then Expr else Expr                  { (Cond $2 $4 $6, getInd $1) }
+     | if Expr then Expr else Expr                  { Cond $2 $4 $6 }
      | Op                                           { $1 }
-     | string                                       { (Str $ getString $1, getInd $1) }
+     | string                                       { Str $ getString $1 }
 
-LetExp : let Defs in Expr                           { (LetExp $2 $4 , getInd $1) }
+LetExp : let Defs in Expr                           { LetExp $2 $4 }
 
-ApplyFunc : Expr '(' Exprs ')'                      { (Func $1 $3, getInd $2) }
-          | Expr with Exprs                         { (Func $1 $3, getInd $2) }
-          | Expr '\\' Symbol '\\' Expr              { (Func (Var $3, getInd $2) [$1, $5], getInd $2) }
+ApplyFunc : Expr '(' Exprs ')'                      { Func $1 $3 }
+          | Expr with Exprs                         { Func $1 $3 }
+          | Expr '\\' Symbol '\\' Expr              { let var = Var $3 $ getInd $2
+                                                      in Func var [$1, $5] }
 
-Lambda : '\\' '(' Tsyms ')' '->' Type '=' Expr      { (Lambda $3 $6 $8, getInd $1) }
+Lambda : '\\' '(' Tsyms ')' '->' Type '=' Expr      { Lambda $3 $6 $8 }
 
 Tsyms : Tsym                                        { [$1] }
       | Tsyms ',' Tsym                              { $3 : $1 }
@@ -114,23 +116,23 @@ Type : Symbol                                       { Type $1 }
 
 Symbol : sym                                        { Symbol $ getString $1 }
 
-Op   : Expr '+' Expr                                { (BinaryOp Plus $1 $3, getInd $2) }
-     | Expr '-' Expr                                { (BinaryOp Minus $1 $3, getInd $2) }
-     | Expr '/' Expr                                { (BinaryOp Divide $1 $3, getInd $2) }
-     | Expr '*' Expr                                { (BinaryOp Multiply $1 $3, getInd $2) }
-     | Expr '==' Expr                               { (BinaryOp Eq $1 $3, getInd $2) }
-     | Expr '<' Expr                                { (BinaryOp LessThan $1 $3, getInd $2) }
-     | Expr '>' Expr                                { (BinaryOp GreaterThan $1 $3, getInd $2) }
-     | Expr '<=' Expr                               { (BinaryOp LessThanEq $1 $3, getInd $2) }
-     | Expr '>=' Expr                               { (BinaryOp GreaterThanEq $1 $3, getInd $2) }
-     | Expr and Expr                                { (BinaryOp And $1 $3, getInd $2) }
-     | Expr or Expr                                 { (BinaryOp Or $1 $3, getInd $2) }
-     | Expr '!=' Expr                               { let e = (BinaryOp Eq $1 $3, getInd $2)
-                                                      in (UnaryOp Negate e, getInd $2) }
-     | '!' Expr                                     { (UnaryOp Negate $2, getInd $1) }
-     | '-' Expr %prec '!'                           { (UnaryOp Negate $2, getInd $1) }
+Op   : Expr '+' Expr                                { BinaryOp Plus $1 $3 }
+     | Expr '-' Expr                                { BinaryOp Minus $1 $3 }
+     | Expr '/' Expr                                { BinaryOp Divide $1 $3 }
+     | Expr '*' Expr                                { BinaryOp Multiply $1 $3 }
+     | Expr '==' Expr                               { BinaryOp Eq $1 $3 }
+     | Expr '<' Expr                                { BinaryOp LessThan $1 $3 }
+     | Expr '>' Expr                                { BinaryOp GreaterThan $1 $3 }
+     | Expr '<=' Expr                               { BinaryOp LessThanEq $1 $3 }
+     | Expr '>=' Expr                               { BinaryOp GreaterThanEq $1 $3 }
+     | Expr and Expr                                { BinaryOp And $1 $3 }
+     | Expr or Expr                                 { BinaryOp Or $1 $3 }
+     | Expr '!=' Expr                               { let e = BinaryOp Eq $1 $3
+                                                      in UnaryOp Negate e }
+     | '!' Expr                                     { UnaryOp Negate $2 }
+     | '-' Expr %prec '!'                           { UnaryOp Negate $2 }
 
-Literal : num                                       { (toLiteral $ getNum $1, getInd $1) }
+Literal : num                                       { toLiteral $ getNum $1 }
 
 {
 parseError :: [Token] -> a

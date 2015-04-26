@@ -18,44 +18,39 @@ genExpr (Literal val _) = toLambda $ show val
 genExpr (Str s) = toLambda s
 
 -- this is WRONG! not lazy. but should still compile.
-genExpr (Attr iexpr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
-    where expr = fst iexpr
+genExpr (Attr expr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
 
-genExpr (Tuple iexprs) = toLambda $ "std::make_tuple(" ++ es ++ ")"
-    where es = intercalate ", " $ map (genExpr . fst) iexprs
+genExpr (Tuple exprs) = toLambda $ "std::make_tuple(" ++ es ++ ")"
+    where es = intercalate ", " $ map genExpr exprs
 
-genExpr (List iexprs) = "{" ++ intercalate ", " (map (genExpr . fst) iexprs) ++ "}"
+genExpr (List exprs) = "{" ++ intercalate ", " (map genExpr exprs) ++ "}"
 
-genExpr (BinaryOp binOp ie1 ie2) = toLambda . genExpr $ binOpToFunc binOp ie1 ie2
+genExpr (BinaryOp binOp e1 e2) = toLambda . genExpr $ binOpToFunc binOp e1 e2
 
-genExpr (UnaryOp unOp iexpr) =
-    toLambda . genExpr $ Func ((Var . Symbol . opToFunc $ unOp), -1) [iexpr]
-    where opToFunc Negate = "psl::negate"
+genExpr (UnaryOp unOp expr) = toLambda . genExpr $ unOpToFunc unOp expr
 
-genExpr (Func iexpr iexprs) = toLambda $ "psl::apply(" ++ es ++ ")"
-    where es = intercalate ", " $ map (genExpr . fst) (iexpr:iexprs)
+genExpr (Func expr exprs) = toLambda $ "psl::apply(" ++ es ++ ")"
+    where es = intercalate ", " $ map genExpr (expr:exprs)
 
-genExpr (Var (Symbol sym))
+genExpr (Var (Symbol sym) _)
     | sym == "sin"          = "psl::sin"
     | sym == "cos"          = "psl::cos"
     | sym == "ft"           = "psl::ft"
     | sym == "intervalMap"  = "psl::intervalMap"
     | otherwise     = sym
 
-genExpr (Lambda tsyms _ iexpr) = toLambda $ genLambda tsyms expr
-    where expr = fst iexpr
+genExpr (Lambda tsyms _ expr) = toLambda $ genLambda tsyms expr
 
-genExpr (LetExp ds iexpr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
+genExpr (LetExp ds expr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
     where   (decs, defs) = genDefs ds
             out = genReturn expr
             n = '\n'
-            expr = fst iexpr
 
-genExpr (Cond iexpr1 iexpr2 iexpr3) = "[&]() {\n" ++ cond ++ "\n}"
+genExpr (Cond expr1 expr2 expr3) = "[&]() {\n" ++ cond ++ "\n}"
     where   cond = "if(" ++ e1 ++ ") {\n" ++ e2 ++ "\n}\nelse {\n" ++ e3 ++ "\n};"
-            e1 = genRawExpr $ fst iexpr1
-            e2 = genReturn $ fst iexpr2
-            e3 = genReturn $ fst iexpr3
+            e1 = genRawExpr expr1
+            e2 = genReturn expr2
+            e3 = genReturn expr3
 
 
 genLambda :: Tsyms -> Expr -> [Char]

@@ -17,15 +17,17 @@ mainCheck ast
     | otherwise = writer (ast, [NoMain])
 
 findGoodMain :: TopDef -> Bool
-findGoodMain (Def d) = findGoodMainDef d 
-findGoodMain (Struct (Symbol sym) tsyms) = False
+findGoodMain (Def d) = isGoodMain d 
+    where   isGoodMain (FuncDef (Symbol sym) tsyms (TupleType ts) _) =
+                goodArgs && length ts > 1 && sym == "main"
+                where   goodArgs = length (filter isCharList tsyms) == 0
 
-findGoodMainDef :: Def -> Bool
-findGoodMainDef (FuncDef (Symbol sym) tsyms rt expr)
-	| sym == "main" = if length ts > 0 then True else False
-	| otherwise = False
-	 where TupleType ts = rt
-findGoodMainDef (VarDef tsym expr) = False
+                        isCharList (Tsym t _) = t == cltype
+                            where cltype = ListType . Type . Symbol $ "char"
 
-defCheck :: AST -> Writer [Error] (ExprScope, StructData, AST)
+            isGoodMain (FuncDef _ _ _ _) = False
+            isGoodMain _ = False
+findGoodMain (Struct _ _) = False
+
+defCheck :: AST -> Writer [Error] (VarScope, StructData, AST)
 defCheck ast = return (Map.empty, Map.empty, ast)

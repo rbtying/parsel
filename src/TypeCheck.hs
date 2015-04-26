@@ -16,120 +16,113 @@ data Error  = WrongType Type Type
 
 -- TODO: make this  more efficient by mapping to ints which map to VarTree
 --  (reduce # of VarTree)
-type ExprScope = Map.Map Int VarTree
-
-data VarTree    = Empty
-                | Node  { treeIndex :: Int
-                        , treeScope :: VarTable
-                        , treeChildren :: [VarTree]
-                        , treeParent :: VarTree
+type VarScope = Map.Map Int ScopeTree
+data ScopeTree  = Empty
+                | Node  { treeScope :: SymbolTable
+                        , treeChildren :: [ScopeTree]
+                        , treeParent :: ScopeTree
                         }
-
-type VarTable = Map.Map Symbol VarData
-
-data VarData = VarData  { varType :: Type
-                        , varLine :: Int
-                        , varDef :: Def
-                        }
+type SymbolTable = Map.Map Symbol Def
 
 type StructData = Map.Map Type (Map.Map Symbol Type)
 
  
-typeCheck :: (ExprScope, StructData, AST) -> Writer [Error] AST
+typeCheck :: (VarScope, StructData, AST) -> Writer [Error] AST
 typeCheck (es, sd, ast) = mapM (checkTopDef es sd) ast
 
-checkTopDef :: ExprScope -> StructData -> TopDef -> Writer [Error] TopDef
+checkTopDef :: VarScope -> StructData -> TopDef -> Writer [Error] TopDef
 checkTopDef es sd (Def d) = checkDef es sd d >>= return . Def
 checkTopDef _ _ (Struct sym tsyms) = return $ Struct sym tsyms
 
-checkDef :: ExprScope -> StructData -> Def -> Writer [Error] Def
-checkDef es sd (FuncDef sym tsyms t iexpr) =
-    do  iexpr' <- checkExpr es sd iexpr
-        iexpr'' <- attemptCast es sd t iexpr'
-        return $ FuncDef sym tsyms t iexpr''
-checkDef es sd (VarDef (Tsym t sym) iexpr) =
-    do  iexpr' <- checkExpr es sd iexpr
-        iexpr'' <- attemptCast es sd t iexpr'
-        return $ VarDef (Tsym t sym) iexpr''
+checkDef :: VarScope -> StructData -> Def -> Writer [Error] Def
+checkDef es sd (FuncDef sym tsyms t expr) =
+    do  expr' <- checkExpr es sd expr
+        expr'' <- attemptCast es sd t expr'
+        return $ FuncDef sym tsyms t expr''
+checkDef es sd (VarDef (Tsym t sym) expr) =
+    do  expr' <- checkExpr es sd expr
+        expr'' <- attemptCast es sd t expr'
+        return $ VarDef (Tsym t sym) expr''
 
 
-checkExpr :: ExprScope -> StructData -> IndExpr -> Writer [Error] IndExpr
-checkExpr es sd (Attr iexpr sym, _) = checkExpr es sd iexpr
-checkExpr es sd (Tuple iexprs, i) = mapM (checkExpr es sd) iexprs >>= newTuple 
-    where newTuple ies = return (Tuple ies, i)
-checkExpr es sd (List iexprs, i)
-    | length iexprs > 0 = 
-        do  let tM = getType es sd $ head iexprs
+checkExpr :: VarScope -> StructData -> Expr -> Writer [Error] Expr
+checkExpr es sd (Attr expr _) = checkExpr es sd expr
+checkExpr es sd (Tuple exprs) = mapM (checkExpr es sd) exprs >>= return . Tuple
+checkExpr es sd (List exprs)
+    | length exprs > 0 = 
+        do  let tM = getType es sd $ head exprs
                 checkAndCast (Right t) e = checkExpr es sd e >>= attemptCast es sd t
                 checkAndCast (Left err) e = writer (e, [MisusedType err])
-                newList ies = return (List ies, i)
-            mapM (checkAndCast tM) iexprs >>= newList
-    | otherwise = return list
-    where list = (List iexprs, i)
--- checkExpr es sd (BinaryOp op ie1 ie2, i)
-checkExpr es sd iexpr = return iexpr
+            mapM (checkAndCast tM) exprs >>= return . List
+    | otherwise = return $ List exprs
+-- checkExpr es sd (BinaryOp op e1 e2)
+checkExpr _ _ expr = return expr
 
 
 
-attemptCast :: ExprScope -> StructData -> Type -> IndExpr -> Writer [Error] IndExpr
-attemptCast es sd t iexpr = attemptCast' $ getType es sd iexpr
+attemptCast :: VarScope -> StructData -> Type -> Expr -> Writer [Error] Expr
+attemptCast es sd t expr = attemptCast' $ getType es sd expr
     where   attemptCast' (Right et)
                 | et == t =
-                    return iexpr
+                    return expr
                 | et == TupleType [t] =
-                    return $ toTuple iexpr
+                    return $ Tuple [expr]
                 | TupleType [et] == t =
-                    return $ fromTuple iexpr
+                    return $ fromTuple expr
                 | otherwise =
-                    writer (iexpr, [WrongType t et])
-            attemptCast' (Left err) = writer (iexpr, [MisusedType err])
+                    writer (expr, [WrongType t et])
+            attemptCast' (Left err) = writer (expr, [MisusedType err])
 
 
 
-getType :: ExprScope -> StructData -> IndExpr -> Either String Type
-getType _ _ (Literal _ unit, _)
+
+getType :: VarScope -> StructData -> Expr -> Either String Type
+getType _ _ (Literal _ unit)
     | unit `endsWith` "s"   = toRightType "time"
     | unit `endsWith` "Hz"  = toRightType "freq"
     | otherwise             = Left "not a unit"
     where toRightType = Right . Type . Symbol
-getType es sd (Attr iexpr sym, _) =
-    do  exprType <- getType es sd iexpr
-        members <- toEither "not a type" $ Map.lookup exprType sd
+getType es sd (Attr expr sym) =
+    do  exprType <- getType es sd expr
+        members <- toEither "not a struct" $ Map.lookup exprType sd
         memberType <- toEither "not a member" $ Map.lookup sym members
         return memberType
-getType es sd (Tuple iexprs, _) = 
-    do  types <- mapM (getType es sd) iexprs
+getType es sd (Tuple exprs) = 
+    do  types <- mapM (getType es sd) exprs
         return $ TupleType types
-getType es sd (List iexprs, _) = 
-    do  types <- mapM (getType es sd) iexprs
+getType es sd (List exprs) = 
+    do  types <- mapM (getType es sd) exprs
         return . ListType . head $ types
-getType es sd (BinaryOp op ie1 ie2, i) = getType es sd $ (binOpToFunc op ie1 ie2, i)
-getType es sd (UnaryOp _ ie, _) = getType es sd ie
-getType es sd (Func ie _, _) =
-    do  ftype <- getType es sd ie
+getType es sd (BinaryOp op e1 e2) = getType es sd $ (binOpToFunc op e1 e2)
+getType es sd (UnaryOp _ e) = getType es sd e
+getType es sd (Func e _) =
+    do  ftype <- getType es sd e
 
         let returnType (FuncType _ t) = Right t
             returnType _ = Left "not a function"
 
         returnType ftype
-getType es _ (Var sym, i) =
-    do  varData <- toEither "sym not found" $ searchForSym es sym i
-        return $ varType varData
-getType _ _ (Lambda _ t _, _) = Right t
-getType es sd (LetExp _ ie, _) = getType es sd ie
-getType es sd (Cond _ ie _, _) = getType es sd ie
-getType _ _ (Str _, _) = Right . ListType . Type . Symbol $ "char"
+getType es _ (Var sym i) =
+    do  def  <- toEither "sym not found" $ searchForSym es sym i
+        return $ defToType def
+    where   defToType (VarDef (Tsym t _) _) = t
+            defToType (FuncDef _ tsyms t _) = FuncType ts t
+                where   ts = map (\(Tsym t' _) -> t') tsyms
+getType _ _ (Lambda _ t _) = Right t
+getType es sd (LetExp _ e) = getType es sd e
+getType es sd (Cond _ e _) = getType es sd e
+getType _ _ (Str _) = Right . ListType . Type . Symbol $ "char"
  
 toEither :: [Char] -> Maybe a -> Either [Char] a
 toEither _ (Just t) = Right t
 toEither s Nothing = Left s
 
-searchForSym :: ExprScope -> Symbol -> Int -> Maybe VarData
+searchForSym :: VarScope -> Symbol -> Int -> Maybe Def
 searchForSym es sym i = Map.lookup i es >>= searchUp
     where   searchUp Empty = Nothing
-            searchUp (Node _ scope _ parent) =
+            searchUp (Node scope _ parent) =
                 let maybeData = Map.lookup sym scope
-                    keepSearching (Just varData) = Just varData
+                    keepSearching (Just def) = Just def
                     keepSearching Nothing = searchUp parent
                 in keepSearching maybeData
 
@@ -144,10 +137,6 @@ isNumber _ = False
 endsWith :: [Char] -> [Char] -> Bool
 endsWith str suf = not $ False `elem` zipWith (==) (reverse str) (reverse suf)
 
-toTuple :: IndExpr -> IndExpr
-toTuple (expr, i) = (Tuple [iexpr], i)
-    where iexpr = (expr, i)
-
-fromTuple :: IndExpr -> IndExpr
-fromTuple (Tuple [iexpr], _) = iexpr
-fromTuple iexpr = iexpr
+fromTuple :: Expr -> Expr
+fromTuple (Tuple [expr]) = expr
+fromTuple expr = expr

@@ -5,8 +5,8 @@ type AST        = [TopDef]
 data TopDef     = Def Def
                 | Struct Symbol Tsyms
 
-data Def        = FuncDef Symbol Tsyms Type IndExpr
-                | VarDef Tsym IndExpr
+data Def        = FuncDef Symbol Tsyms Type Expr
+                | VarDef Tsym Expr
                 deriving (Show)
 
 data Symbol     = Symbol String
@@ -15,19 +15,17 @@ data Symbol     = Symbol String
 instance Ord Symbol where
     (Symbol sym1) `compare` (Symbol sym2) = sym1 `compare` sym2
 
-type IndExpr    = (Expr, Int)
-
 data Expr       = Literal Float Unit
-                | Attr IndExpr Symbol
-                | Tuple [IndExpr]
-                | List [IndExpr]
-                | BinaryOp BinOp IndExpr IndExpr
-                | UnaryOp UnOp IndExpr
-                | Func IndExpr [IndExpr]
-                | Var Symbol
-                | Lambda Tsyms Type IndExpr
-                | LetExp [Def] IndExpr
-                | Cond IndExpr IndExpr IndExpr
+                | Attr Expr Symbol
+                | Tuple [Expr]
+                | List [Expr]
+                | BinaryOp BinOp Expr Expr
+                | UnaryOp UnOp Expr
+                | Func Expr [Expr]
+                | Var Symbol Int
+                | Lambda Tsyms Type Expr
+                | LetExp [Def] Expr
+                | Cond Expr Expr Expr
                 | Str [Char]
                 deriving (Show)
 
