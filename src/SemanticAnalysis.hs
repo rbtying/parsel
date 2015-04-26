@@ -30,4 +30,22 @@ findGoodMain (Def d) = isGoodMain d
 findGoodMain (Struct _ _) = False
 
 defCheck :: AST -> Writer [Error] (VarScope, StructData, AST)
-defCheck ast = return (Map.empty, Map.empty, ast)
+defCheck ast = return (Map.empty, getStructs ast, ast)
+
+getStructs :: AST -> StructData
+getStructs ast = Map.fromList (map getStruct [1..numberStructs])
+    where   getStruct n = (getType n ast, getSymbols n)
+            numberStructs = length (structList ast)
+
+structList :: AST -> [Struct]
+structList ast = filter getListStructs ast
+
+getListStructs :: TopDef -> Bool
+getListStructs (Struct (Symbol sym) ts) = 
+
+getType :: Int -> AST -> Symbol
+getType n ast = structType ((structList ast) !! (n-1))
+
+structType :: Struct -> Bool
+structType (Struct (Symbol sym) _) = True
+structType (Def d) = False
