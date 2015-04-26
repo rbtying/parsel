@@ -28,40 +28,68 @@ type StructData = Map.Map Type (Map.Map Symbol Type)
 
  
 typeCheck :: (VarScope, StructData, AST) -> Writer [Error] AST
-typeCheck (es, sd, ast) = mapM (checkTopDef es sd) ast
+typeCheck (vs, sd, ast) = mapM (checkTopDef vs sd) ast
 
 checkTopDef :: VarScope -> StructData -> TopDef -> Writer [Error] TopDef
-checkTopDef es sd (Def d) = checkDef es sd d >>= return . Def
+checkTopDef vs sd (Def d) = checkDef vs sd d >>= return . Def
 checkTopDef _ _ (Struct sym tsyms) = return $ Struct sym tsyms
 
 checkDef :: VarScope -> StructData -> Def -> Writer [Error] Def
-checkDef es sd (FuncDef sym tsyms t expr) =
-    do  expr' <- checkExpr es sd expr
-        expr'' <- attemptCast es sd t expr'
+checkDef vs sd (FuncDef sym tsyms t expr) =
+    do  expr' <- checkExpr vs sd expr
+        expr'' <- attemptCast vs sd t expr'
         return $ FuncDef sym tsyms t expr''
-checkDef es sd (VarDef (Tsym t sym) expr) =
-    do  expr' <- checkExpr es sd expr
-        expr'' <- attemptCast es sd t expr'
+checkDef vs sd (VarDef (Tsym t sym) expr) =
+    do  expr' <- checkExpr vs sd expr
+        expr'' <- attemptCast vs sd t expr'
         return $ VarDef (Tsym t sym) expr''
 
 
 checkExpr :: VarScope -> StructData -> Expr -> Writer [Error] Expr
-checkExpr es sd (Attr expr _) = checkExpr es sd expr
-checkExpr es sd (Tuple exprs) = mapM (checkExpr es sd) exprs >>= return . Tuple
-checkExpr es sd (List exprs)
+checkExpr vs sd (Attr expr _) = checkExpr vs sd expr
+checkExpr vs sd (Tuple exprs) = mapM (checkExpr vs sd) exprs >>= return . Tuple
+checkExpr vs sd (List exprs)
     | length exprs > 0 = 
-        do  let tM = getType es sd $ head exprs
-                checkAndCast (Right t) e = checkExpr es sd e >>= attemptCast es sd t
-                checkAndCast (Left err) e = writer (e, [MisusedType err])
-            mapM (checkAndCast tM) exprs >>= return . List
+        do  let tM = getType vs sd $ head exprs
+            exprs' <- mapM (checkAndCast vs sd tM) exprs
+            return $ List exprs'
     | otherwise = return $ List exprs
--- checkExpr es sd (BinaryOp op e1 e2)
+checkExpr vs sd (BinaryOp op e1 e2) = checkExpr vs sd $ binOpToFunc op e1 e2
+checkExpr vs sd (UnaryOp op expr) = checkExpr vs sd $ unOpToFunc op expr
+checkExpr vs sd (Func expr exprs) =
+    do  expr' <- checkExpr vs sd expr
+
+        let toArgTypes (Right (FuncType ts _)) = return ts
+            toArgTypes (Right _) = return []
+            toArgTypes (Left err) = writer ([], [MisusedType err])
+        argTypes <- toArgTypes $ getType vs sd expr'
+
+        let checkers = map (checkAndCast vs sd . Right) argTypes
+            foldChecker es (checker, e) = checker e >>= return . (:es)
+        exprs' <- foldM foldChecker [] $ zip checkers exprs
+
+        return $ Func expr' exprs'
+checkExpr vs sd (Lambda _ rt expr) = checkAndCast vs sd (return rt) expr
+checkExpr vs sd (LetExp defs expr) =
+    do  defs' <- mapM (checkDef vs sd) defs
+        expr' <- checkExpr vs sd expr
+        return $ LetExp defs' expr'
+checkExpr vs sd (Cond e1 e2 e3) =
+    do  e1' <- checkAndCast vs sd bool e1
+        e2' <- checkAndCast vs sd bool e2
+        e3' <- checkExpr vs sd e3
+        return $ Cond e1' e2' e3'
+    where bool = return . Type . Symbol $ "bool"
 checkExpr _ _ expr = return expr
+
+checkAndCast :: VarScope -> StructData -> Either String Type -> Expr -> Writer [Error] Expr
+checkAndCast vs sd (Right t) expr = checkExpr vs sd expr >>= attemptCast vs sd t
+checkAndCast _ _ (Left err) expr = writer (expr, [MisusedType err])
 
 
 
 attemptCast :: VarScope -> StructData -> Type -> Expr -> Writer [Error] Expr
-attemptCast es sd t expr = attemptCast' $ getType es sd expr
+attemptCast vs sd t expr = attemptCast' $ getType vs sd expr
     where   attemptCast' (Right et)
                 | et == t =
                     return expr
@@ -75,42 +103,42 @@ attemptCast es sd t expr = attemptCast' $ getType es sd expr
 
 
 
-
 getType :: VarScope -> StructData -> Expr -> Either String Type
 getType _ _ (Literal _ unit)
     | unit `endsWith` "s"   = toRightType "time"
     | unit `endsWith` "Hz"  = toRightType "freq"
     | otherwise             = Left "not a unit"
     where toRightType = Right . Type . Symbol
-getType es sd (Attr expr sym) =
-    do  exprType <- getType es sd expr
+getType vs sd (Attr expr sym) =
+    do  exprType <- getType vs sd expr
         members <- toEither "not a struct" $ Map.lookup exprType sd
         memberType <- toEither "not a member" $ Map.lookup sym members
         return memberType
-getType es sd (Tuple exprs) = 
-    do  types <- mapM (getType es sd) exprs
+getType vs sd (Tuple exprs) = 
+    do  types <- mapM (getType vs sd) exprs
         return $ TupleType types
-getType es sd (List exprs) = 
-    do  types <- mapM (getType es sd) exprs
+getType vs sd (List exprs) = 
+    do  types <- mapM (getType vs sd) exprs
         return . ListType . head $ types
-getType es sd (BinaryOp op e1 e2) = getType es sd $ (binOpToFunc op e1 e2)
-getType es sd (UnaryOp _ e) = getType es sd e
-getType es sd (Func e _) =
-    do  ftype <- getType es sd e
+getType vs sd (BinaryOp op e1 e2) = getType vs sd $ (binOpToFunc op e1 e2)
+getType vs sd (UnaryOp _ expr) = getType vs sd expr
+getType vs sd (Func expr _) =
+    do  ftype <- getType vs sd expr
 
         let returnType (FuncType _ t) = Right t
             returnType _ = Left "not a function"
 
         returnType ftype
-getType es _ (Var sym i) =
-    do  def  <- toEither "sym not found" $ searchForSym es sym i
+getType vs _ (Var sym i) =
+    do  def  <- toEither "sym not found" $ searchForSym vs sym i
         return $ defToType def
     where   defToType (VarDef (Tsym t _) _) = t
             defToType (FuncDef _ tsyms t _) = FuncType ts t
                 where   ts = map (\(Tsym t' _) -> t') tsyms
-getType _ _ (Lambda _ t _) = Right t
-getType es sd (LetExp _ e) = getType es sd e
-getType es sd (Cond _ e _) = getType es sd e
+getType _ _ (Lambda tss rt _) = Right $ FuncType ts rt
+    where ts = map (\(Tsym t _) -> t) tss
+getType vs sd (LetExp _ e) = getType vs sd e
+getType vs sd (Cond _ _ e) = getType vs sd e
 getType _ _ (Str _) = Right . ListType . Type . Symbol $ "char"
  
 toEither :: [Char] -> Maybe a -> Either [Char] a
@@ -118,7 +146,7 @@ toEither _ (Just t) = Right t
 toEither s Nothing = Left s
 
 searchForSym :: VarScope -> Symbol -> Int -> Maybe Def
-searchForSym es sym i = Map.lookup i es >>= searchUp
+searchForSym vs sym i = Map.lookup i vs >>= searchUp
     where   searchUp Empty = Nothing
             searchUp (Node scope _ parent) =
                 let maybeData = Map.lookup sym scope
