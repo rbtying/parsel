@@ -19,11 +19,15 @@ mainCheck ast
 findGoodMain :: TopDef -> Bool
 findGoodMain (Def d) = isGoodMain d 
     where   isGoodMain (FuncDef (Symbol sym) tsyms (TupleType ts) _) =
-                goodArgs && length ts > 1 && sym == "main"
-                where   goodArgs = length (filter isCharList tsyms) == 0
+                goodArgs && goodts && length ts > 0 && sym == "main"
+                where   goodArgs = length (filter isNotCharList tsyms) == 0
+                        goodts = length (filter isNotSignal ts) == 0
 
-                        isCharList (Tsym t _) = t == cltype
+                        isNotCharList (Tsym t _) = t /= cltype
                             where cltype = ListType . Type . Symbol $ "char"
+
+                        isNotSignal (Type (Symbol s)) = s == "psl::signal"
+                        isNotSignal _ = False
 
             isGoodMain (FuncDef _ _ _ _) = False
             isGoodMain _ = False

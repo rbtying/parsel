@@ -13,7 +13,7 @@ psl::Chunk<std::function<double(psl::Chunk<double>,psl::Chunk<double>,psl::Chunk
 psl::Chunk<std::function<fsignal(psl::Chunk<double>)>> leftRightFilter;
 psl::Chunk<std::function<interval(psl::Chunk<interval>)>> filterInterval;
 psl::Chunk<std::function<std::function<psl::Signal(psl::Chunk<psl::Signal>)>(psl::Chunk<psl::Signal>)>> thing;
-psl::Chunk<std::function<std::tuple<psl::Chunk<psl::Signal>>(psl::Chunk<std::vector<psl::Chunk<char>>>,psl::Chunk<std::vector<psl::Chunk<char>>>)>> out;
+psl::Chunk<std::function<std::tuple<psl::Chunk<psl::Signal>>(psl::Chunk<std::vector<psl::Chunk<char>>>)>> out;
 
 int main(int argc, char **argv) {
 applyFilterF = [&]() { return [&](psl::Chunk<interval> input, psl::Chunk<fsignal> filter) {
@@ -79,7 +79,7 @@ t = [&]() { return [&](psl::Chunk<psl::Signal> s) {
 return t();
 }();
 }; };
-out = [&]() { return [&](psl::Chunk<std::vector<psl::Chunk<char>>> input2, psl::Chunk<std::vector<psl::Chunk<char>>> input) {
+out = [&]() { return [&](psl::Chunk<std::vector<psl::Chunk<char>>> input) {
  return [&]() {
 psl::Chunk<psl::Signal> p;
 psl::Chunk<psl::Signal> m;
@@ -107,7 +107,7 @@ args[i] = [=]{ return chk; }
 }
 
 bool B = true;
-while(out()(args[2], args[1])().fillBuffer(B))
+while(out()(args[1])().fillBuffer(B))
 B = !B;
 return 0;
 }

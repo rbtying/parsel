@@ -107,12 +107,12 @@ getType :: VarScope -> StructData -> Expr -> Either String Type
 getType _ _ (Literal _ unit)
     | unit `endsWith` "s"   = toRightType "time"
     | unit `endsWith` "Hz"  = toRightType "freq"
-    | otherwise             = Left "not a unit"
+    | otherwise             = Left $ "Not a unit: " ++ unit
     where toRightType = Right . Type . Symbol
 getType vs sd (Attr expr sym) =
     do  exprType <- getType vs sd expr
-        members <- toEither "not a struct" $ Map.lookup exprType sd
-        memberType <- toEither "not a member" $ Map.lookup sym members
+        members <- toEither "Not a struct" $ Map.lookup exprType sd
+        memberType <- toEither "Not a member" $ Map.lookup sym members
         return memberType
 getType vs sd (Tuple exprs) = 
     do  types <- mapM (getType vs sd) exprs
@@ -126,11 +126,13 @@ getType vs sd (Func expr _) =
     do  ftype <- getType vs sd expr
 
         let returnType (FuncType _ t) = Right t
-            returnType _ = Left "not a function"
+            returnType _ = Left $ "Not a function: " ++ show expr
 
         returnType ftype
 getType vs _ (Var sym i) =
-    do  def  <- toEither "sym not found" $ searchForSym vs sym i
+    do  let Symbol s = sym
+            err = "Symbol not found: " ++ s
+        def  <- toEither err $ searchForSym vs sym i
         return $ defToType def
     where   defToType (VarDef (Tsym t _) _) = t
             defToType (FuncDef _ tsyms t _) = FuncType ts t
