@@ -22,11 +22,10 @@ data ScopeTree  = Empty
                         , treeChildren :: [ScopeTree]
                         , treeParent :: ScopeTree
                         }
-type SymbolTable = Map.Map Symbol Def
+type SymbolTable = Map.Map Symbol Type
 
 type StructData = Map.Map Type (Map.Map Symbol Type)
 
- 
 typeCheck :: (VarScope, StructData, AST) -> Writer [Error] AST
 typeCheck (vs, sd, ast) = mapM (checkTopDef vs sd) ast
 
@@ -129,14 +128,9 @@ getType vs sd (Func expr _) =
             returnType _ = Left $ "Not a function: " ++ show expr
 
         returnType ftype
-getType vs _ (Var sym i) =
-    do  let Symbol s = sym
-            err = "Symbol not found: " ++ s
-        def  <- toEither err $ searchForSym vs sym i
-        return $ defToType def
-    where   defToType (VarDef (Tsym t _) _) = t
-            defToType (FuncDef _ tsyms t _) = FuncType ts t
-                where   ts = map (\(Tsym t' _) -> t') tsyms
+getType vs _ (Var sym i) = toEither err $ searchForSym vs sym i
+  where   Symbol s = sym
+          err = "Symbol not found: " ++ s
 getType _ _ (Lambda tss rt _) = Right $ FuncType ts rt
     where ts = map (\(Tsym t _) -> t) tss
 getType vs sd (LetExp _ e) = getType vs sd e
@@ -147,12 +141,12 @@ toEither :: [Char] -> Maybe a -> Either [Char] a
 toEither _ (Just t) = Right t
 toEither s Nothing = Left s
 
-searchForSym :: VarScope -> Symbol -> Int -> Maybe Def
+searchForSym :: VarScope -> Symbol -> Int -> Maybe Type
 searchForSym vs sym i = Map.lookup i vs >>= searchUp
     where   searchUp Empty = Nothing
             searchUp (Node scope _ parent) =
                 let maybeData = Map.lookup sym scope
-                    keepSearching (Just def) = Just def
+                    keepSearching (Just t) = Just t
                     keepSearching Nothing = searchUp parent
                 in keepSearching maybeData
 

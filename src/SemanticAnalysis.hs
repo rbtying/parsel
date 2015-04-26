@@ -2,6 +2,7 @@ module SemanticAnalysis where
 
 import AST
 import TypeCheck
+import GlobalScope
 
 import Control.Monad.Writer
 
@@ -34,7 +35,7 @@ findGoodMain (Def d) = isGoodMain d
 findGoodMain (Struct _ _) = False
 
 defCheck :: AST -> Writer [Error] (VarScope, StructData, AST)
-defCheck ast = return (Map.empty, Map.empty, ast)
+--defCheck ast = return (Map.empty, Map.empty, ast)
 --defCheck ast = return (Map.empty, getStructs ast, ast)
 
 --getStructs :: AST -> StructData
@@ -55,3 +56,4 @@ getStructType n ast = structType ((structList ast) !! (n-1))
 structType :: TopDef -> [Char]
 structType (Struct (Symbol sym) _) = sym
 structType (Def _) = "def"
+defCheck ast = return (builtInScope, builtInStructData, ast)

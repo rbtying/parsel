@@ -3,6 +3,7 @@ import qualified AlexToken
 
 import System.Environment   
 import System.Process
+import System.Exit
 
 import AST
 import Generators
@@ -10,22 +11,28 @@ import SemanticAnalysis
 import TypeCheck
 
 import Control.Monad.Writer
+import Data.List
 
 main :: IO ()
-main = do
-    (infile:(outfile:_)) <- getArgs
+main = getArgs >>= handleArgs
+
+handleArgs :: [String] -> IO()
+handleArgs (infile:outfile:[]) = do
     input <- readFile infile
     let tokens = AlexToken.scanTokens input
         parse = HappyParser.parse tokens
-        code = generateCode parse
-        -- (newparse, errors) = runWriter $ semAnalysis parse
-        -- code =  if null errors
-        --        then generateCode newparse
-        --        else "Error: " ++ show errors
-    indent <- return code--readProcess "astyle" [] code
-    writeFile outfile indent
-
-
+        (newparse, errors) = runWriter $ semAnalysis parse
+        code = if null errors then generateCode newparse else ""
+    if (null errors)
+      then do
+        indent <- return code -- readProcess "astyle" [] code
+        writeFile outfile indent
+      else do
+        putStrLn $ "Error: " ++ intercalate "\n" (map show errors)
+        exitWith (ExitFailure 1)
+handleArgs _ = do
+    execname <- getProgName
+    putStrLn $ "Usage:\n\t" ++ execname ++ " input.psl output.cpp"
 
 generateCode :: AST -> [Char]
 generateCode ast = header ++ n:sdecs ++ n:sdefs ++
