@@ -41,13 +41,22 @@ genDefs (def:defs) = (topdef ++ topdefs, code ++ codes)
 genDef :: Def -> ([Char], [Char], [Char])
 genDef (FuncDef (Symbol sym) tsyms rt expr)
     | sym == "main" = 
-        let mainloop = "bool B = true;\nwhile(" ++ conds ++ ")\nB = !B;\n"
-            conds = intercalate " && " $ map cond [1..numSigs]
-            cond n = "out().get(" ++ show (n-1) ++ ")().fillBuffer(B)" 
-            numSigs = length ts
+        -- Rewrite with Chunk<vector<Chunk<char>>>
+        let mainloop = "psl::Chunk<std::vector<psl::Chunk<char>>> args[argc];\n"
+                ++ "for (int i = 0; i < argc; i++) {\n"
+                ++ "std::vector<psl::Chunk<char>> chk(strlen(argv[i])+1);\n"
+                ++ "std::transform(argv[i], argv[i]+strlen(argv[i])+1, chk.begin(), chr2Chunk);\n"
+                ++ "args[i] = [=]{ return chk; }\n"
+                ++ "}\n\n"
+                ++ "bool B = true;\n"
+                ++ "while(out()(" ++ args ++ ")().fillBuffer(B))\n"
+                ++ "B = !B;\n"
+            args = intercalate ", " $ map arg (reverse [1..numSigs])
+            arg n = "args[" ++ show (n) ++ "]" 
+            numSigs = length tsyms
             TupleType ts = rt
 
-            (topdef, code, _) = genDef (VarDef (Tsym rt $ Symbol "out") expr)
+            (topdef, code, _) = genDef (FuncDef (Symbol "out") tsyms rt expr)
         in (topdef, code, mainloop)
     | otherwise = 
         let def = sym ++ " = " ++ genExpr (Lambda tsyms rt expr) ++ ";\n"
