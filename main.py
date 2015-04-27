@@ -7,7 +7,7 @@ from test.builder import Builder
 from test.base import Base
 from test.tester import Tester
 def main():    
-    options = {1 : moreArgs, 2 : moreArgs, 3 : moreArgs, 4 : enoughArgs, 5: enoughArgs }
+    options = {1 : moreArgs, 2 : moreArgs, 3 : enoughArgs, 4 : enoughArgs, 5: enoughArgs }
     options[len(sys.argv)]()
     
     b = Builder(sys.argv[1], sys.argv[2])
@@ -22,7 +22,7 @@ def main():
     for f in files:
         times.append(os.stat(f).st_mtime)
     flag = False
-    if len(sys.argv) == 5 and sys.argv[4] == "-v":
+    if len(sys.argv) == 4 and sys.argv[3] == "-v":
         flag = True
     changes = 1
     while True and flag:
