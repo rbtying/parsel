@@ -27,18 +27,22 @@ def main():
     changes = 1
     while True and flag:
         try:
-            counter = 0
-            while counter < len(files):
-                if os.path.isfile(files[counter]):
-                    current = os.stat(files[counter]).st_mtime
-                    if current != times[counter]:
-                        b = Builder(sys.argv[1], getCppName(sys.argv[2], changes%2))
-                        t = Tester(sys.argv[2], sys.argv[3], 1)
-                        changes = changes + 1
-                        times[counter] = current
-                counter = counter + 1
-        except:
-            print ""
+            sleep(1)
+            try:
+                counter = 0
+                while counter < len(files):
+                    if os.path.isfile(files[counter]):
+                        current = os.stat(files[counter]).st_mtime
+                        if current != times[counter]:
+                            b = Builder(sys.argv[1], getCppName(sys.argv[2], changes%2))
+                            t = Tester(sys.argv[2], sys.argv[3], 1)
+                            changes = changes + 1
+                            times[counter] = current
+                    counter = counter + 1
+            except:
+                print ""
+        except KeyboardInterrupt:
+            sys.exit()
 def moreArgs():
     print "\npython main.py <psl file> <cpp file to compile to> <example compiled cpp> (-v for running log)\n"
     sys.exit()
