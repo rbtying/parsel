@@ -1,4 +1,5 @@
 #include "Signal.h"
+#include "outputs.h"
 #include <sndfile.hh>
 #include <memory>
 #include <iostream>
@@ -14,7 +15,7 @@ Signal::Signal(std::string filepath) :
 { }
 
 Signal::Signal(SndfileHandle& file) :
-    Signal(fillFromFile(file), file.samplerate(), file.channels())
+    Signal(psl::fillFromFile(file), file.samplerate(), file.channels())
 { }
 
 Signal::Signal(fill_t fill, int sampleRate, int channels) :
@@ -48,29 +49,73 @@ int Signal::channels() const
     return channels_;
 }
 
-fill_t Signal::fillFromFile(SndfileHandle& file)
+
+Signal Signal::add(Signal* s) 
 {
-    std::shared_ptr<std::vector<short>> fileDataP(
-            new std::vector<short>(file.channels() * file.frames()));
-    file.read(fileDataP->data(), fileDataP->size());
+    op_ta f = [](std::complex<double> l, std::complex<double> r) {return l+r;};
 
-    std::shared_ptr<int> frameP(new int(0));
-    int channels = file.channels();
-    return [channels, fileDataP, frameP](buffer_t* bufferP, bool) 
+    return Signal(fillFromOperator(f, this, s), sampleRate_, channels_);
+}
+
+Signal Signal::add(double s)
+{
+    op_tb f = [s](std::complex<double> l) {return l + std::complex<double>(s);};
+     
+    return Signal(fillFromOperator(f, this), sampleRate_, channels_);
+
+}
+
+Signal Signal::sub(Signal* s) 
+{
+    op_ta f = [](std::complex<double> l, std::complex<double> r) {return l-r;};
+
+    return Signal(fillFromOperator(f, this, s), sampleRate_, channels_);
+}
+
+Signal Signal::sub(double s)
+{
+    op_tb f = [s](std::complex<double> l) {return l - std::complex<double>(s);};
+     
+    return Signal(fillFromOperator(f, this), sampleRate_, channels_);
+
+}
+
+Signal Signal::mul(Signal* s) 
+{
+    op_ta f = [](std::complex<double> l, std::complex<double> r) {return l*r;};
+    
+    return Signal(fillFromOperator(f, this, s), sampleRate_, channels_);
+    
+}
+
+Signal Signal::mul(double s)
+{
+    op_tb f = [s](std::complex<double> l) 
     {
-        // fill buffer from fileDataP
-        int stopPos = std::min(bufferP->size(),
-                fileDataP->size() / channels - *frameP);
-        for(int f = 0; f < stopPos; f++)
-        {
-            (*bufferP)[f] = std::vector<std::complex<double>>(channels);
-            for(int c = 0; c < channels; c++)
-                (*bufferP)[f][c] = fileDataP->at(((*frameP + f) * channels) + c);   
-        }
-        *frameP += stopPos;
-        for(int i = stopPos; i < bufferP->size(); i++)
-            (*bufferP)[i] = std::vector<std::complex<double>>(channels, 0);
-
-        return stopPos == bufferP->size();
+    	return l * std::complex<double>(s);
     };
+     
+    return Signal(fillFromOperator(f, this), sampleRate_, channels_);
+
+}
+
+Signal Signal::div(Signal* s) 
+{
+    op_ta f = [](std::complex<double> l, std::complex<double> r) {return l/r;};
+
+    return Signal(fillFromOperator(f, this, s), sampleRate_ , channels_);
+
+}
+
+Signal Signal::div(double s)
+{
+    op_tb f = [s](std::complex<double> l) {return l / std::complex<double>(s);};
+     
+    return Signal(fillFromOperator(f, this), sampleRate_, channels_);
+
+}
+
+Signal Signal::shift(utime_t delay)
+{
+    return Signal(fillFromPhaseShift(delay, this), sampleRate_, channels_);
 }
