@@ -29,3 +29,9 @@ Chunk<T>::operator T()
 {
     return f_();
 }
+
+template<class T>
+Chunk<T>::operator std::function<T()>()
+{
+    return f_;
+}

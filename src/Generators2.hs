@@ -37,6 +37,7 @@ genExpr (Var (Symbol sym) _)
     | sym == "cos"          = "psl::cos"
     | sym == "ft"           = "psl::ft"
     | sym == "intervalMap"  = "psl::intervalMap"
+    | sym == "toSignal"     = "psl::toSignal"
     | otherwise     = sym
 
 genExpr (Lambda tsyms _ expr) = toChunk $ genLambda tsyms expr

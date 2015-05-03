@@ -13,6 +13,7 @@ namespace psl
         T& operator()();
         Chunk<T>& operator=(std::function<T()> f);
         operator T();
+        operator std::function<T()>();
 
         std::function<T()> f_;
 

@@ -6,6 +6,8 @@
 
 namespace psl
 {
+    Signal toSignal(double d);
+
     template<class F, class... Args>
     auto apply(F&& f, Args... as) -> decltype(f(as...))
     {
@@ -13,10 +15,16 @@ namespace psl
     }
 
     template<class T, class... Args>
-    T apply(Chunk<std::function<T(Args...)>> c, Args... as);
+    T apply(Chunk<std::function<T(Args...)>> c, Args... as)
+    {
+        c()(as...);
+    }
 
     template<class F, class T>
     void set(Chunk<T> c, F&& f);
+//    {
+//        c = f;
+//    }
 
     template<class F>
     auto toChunk(F&& f) -> Chunk<decltype(f())>
