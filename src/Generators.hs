@@ -46,7 +46,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
                 ++ "for (int i = 0; i < argc; i++) {\n"
                 ++ "std::vector<psl::Chunk<char>> chk(strlen(argv[i])+1);\n"
                 ++ "std::transform(argv[i], argv[i]+strlen(argv[i])+1, chk.begin(), chr2Chunk);\n"
-                ++ "args[i] = [=]{ return chk; }\n"
+                ++ "args[i] = [=]{ return chk; };\n"
                 ++ "}\n\n"
                 ++ "bool B = true;\n"
                 ++ "while(out()(" ++ args ++ ")().fillBuffer(B))\n"
@@ -59,8 +59,8 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
             (topdef, code, _) = genDef (FuncDef (Symbol "out") tsyms rt expr)
         in (topdef, code, mainloop)
     | otherwise = 
-        let def = sym ++ " = " ++ genExpr (Lambda tsyms rt expr) ++ ";\n"
-            
+        let def = "psl::set(" ++ sym ++ ", " ++
+                    genExpr (Lambda tsyms rt expr) ++ ");\n"
             decl = (genTsym $ Tsym (FuncType argtypes rt) (Symbol sym)) ++ ";\n"
             argtypes = map (\ts -> let Tsym t _ = ts in t) tsyms
         in (decl, def, "")

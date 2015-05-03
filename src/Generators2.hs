@@ -9,27 +9,27 @@ import Data.List
 
 genExpr :: Expr -> [Char]
 
-genExpr (Literal val ('K':_)) = toLambda $ show (val * 1.0e3)
-genExpr (Literal val ('M':_)) = toLambda $ show (val * 1.0e6)
-genExpr (Literal val ('m':_)) = toLambda $ show (val * 1.0e-3)
-genExpr (Literal val ('u':_)) = toLambda $ show (val * 1.0e-6)
-genExpr (Literal val _) = toLambda $ show val
+genExpr (Literal val ('K':_)) = toChunk $ show (val * 1.0e3)
+genExpr (Literal val ('M':_)) = toChunk $ show (val * 1.0e6)
+genExpr (Literal val ('m':_)) = toChunk $ show (val * 1.0e-3)
+genExpr (Literal val ('u':_)) = toChunk $ show (val * 1.0e-6)
+genExpr (Literal val _) = toChunk $ show val
 
-genExpr (Str s) = toLambda s
+genExpr (Str s) = toChunk s
 
 -- this is WRONG! not lazy. but should still compile.
 genExpr (Attr expr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
 
-genExpr (Tuple exprs) = toLambda $ "std::make_tuple(" ++ es ++ ")"
+genExpr (Tuple exprs) = toChunk $ "std::make_tuple(" ++ es ++ ")"
     where es = intercalate ", " $ map genExpr exprs
 
 genExpr (List exprs) = "{" ++ intercalate ", " (map genExpr exprs) ++ "}"
 
-genExpr (BinaryOp binOp e1 e2) = toLambda . genExpr $ binOpToFunc binOp e1 e2
+genExpr (BinaryOp binOp e1 e2) = toChunk . genExpr $ binOpToFunc binOp e1 e2
 
-genExpr (UnaryOp unOp expr) = toLambda . genExpr $ unOpToFunc unOp expr
+genExpr (UnaryOp unOp expr) = toChunk . genExpr $ unOpToFunc unOp expr
 
-genExpr (Func expr exprs) = toLambda $ "psl::apply(" ++ es ++ ")"
+genExpr (Func expr exprs) = toChunk $ "psl::apply(" ++ es ++ ")"
     where es = intercalate ", " $ map genExpr (expr:exprs)
 
 genExpr (Var (Symbol sym) _)
@@ -39,7 +39,7 @@ genExpr (Var (Symbol sym) _)
     | sym == "intervalMap"  = "psl::intervalMap"
     | otherwise     = sym
 
-genExpr (Lambda tsyms _ expr) = toLambda $ genLambda tsyms expr
+genExpr (Lambda tsyms _ expr) = toChunk $ genLambda tsyms expr
 
 genExpr (LetExp ds expr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
     where   (decs, defs) = genDefs ds
@@ -65,5 +65,5 @@ genRawExpr :: Expr -> [Char]
 genRawExpr e = genExpr e ++ "()"
 
 
-toLambda :: [Char] -> [Char]
-toLambda e = "[&]() { return " ++ e ++ "; }"
+toChunk :: [Char] -> [Char]
+toChunk e = "psl::toChunk([&]() { return " ++ e ++ "; })"

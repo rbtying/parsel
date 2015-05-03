@@ -1,4 +1,4 @@
 main(input[char]) -> (signal) =
-    let f(int x, char c) -> int = x + 1
+    let f(float x) -> int = x + 1
         g(int x) -> int = 2 * x
     in g(f(5))

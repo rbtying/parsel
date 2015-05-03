@@ -11,7 +11,8 @@ namespace psl
 {
     typedef std::vector<std::complex<double>> sample_t;
     typedef std::vector<sample_t> buffer_t;
-    typedef std::function<std::complex<double>(std::complex<double>, std::complex<double>)> op_ta;
+    typedef std::function<std::complex<double>(std::complex<double>,
+            std::complex<double>)> op_ta;
     typedef std::function<std::complex<double>(std::complex<double>)> op_tb;
     typedef std::function<std::complex<double>(double)> op_tc;
     
@@ -33,19 +34,19 @@ namespace psl
         int sampleRate() const;
         int channels() const;
 
-	Signal add(Signal* s);
-	Signal add(double s);
-	
-	Signal sub(Signal* s);
-	Signal sub(double s);
-	
-	Signal mul(Signal* s);
-	Signal mul(double s);
-	
-	Signal div(Signal* s);
-	Signal div(double s);
-	
-	Signal shift(utime_t delay);
+        Signal add(Signal* s);
+        Signal add(double s);
+        
+        Signal sub(Signal* s);
+        Signal sub(double s);
+        
+        Signal mul(Signal* s);
+        Signal mul(double s);
+        
+        Signal div(Signal* s);
+        Signal div(double s);
+        
+        Signal shift(utime_t delay);
 
         fill_t fill_;
         buffer_t buffer_;
