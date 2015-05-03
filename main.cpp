@@ -33,8 +33,11 @@ std::transform(argv[i], argv[i]+strlen(argv[i])+1, chk.begin(), chr2Chunk);
 args[i] = [=]{ return chk; };
 }
 
-bool B = true;
-while(out()(args[1])().fillBuffer(B))
+bool B = false, success;
+do {
 B = !B;
+auto fc = out()(args[1]);
+success = std::get<0>(fc)().fillBuffer(B);
+} while (success);
 return 0;
 }

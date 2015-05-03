@@ -48,9 +48,14 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
                 ++ "std::transform(argv[i], argv[i]+strlen(argv[i])+1, chk.begin(), chr2Chunk);\n"
                 ++ "args[i] = [=]{ return chk; };\n"
                 ++ "}\n\n"
-                ++ "bool B = true;\n"
-                ++ "while(out()(" ++ args ++ ")().fillBuffer(B))\n"
+                ++ "bool B = false, success;\n"
+                ++ "do {\n"
                 ++ "B = !B;\n"
+                ++ "auto fc = out()(" ++ args ++ ");\n"
+                ++ "success = " ++ fills ++ ";\n"
+                ++ "} while (success);\n"
+            fills = intercalate " && " $ map fill ([0..(length ts)-1])
+            fill n = "std::get<" ++ show(n) ++ ">(fc)().fillBuffer(B)"
             args = intercalate ", " $ map arg (reverse [1..numSigs])
             arg n = "args[" ++ show (n) ++ "]" 
             numSigs = length tsyms
