@@ -46,7 +46,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
                 ++ "for (int i = 0; i < argc; i++) {\n"
                 ++ "std::vector<psl::Chunk<char>> chk(strlen(argv[i])+1);\n"
                 ++ "std::transform(argv[i], argv[i]+strlen(argv[i])+1, chk.begin(), chr2Chunk);\n"
-                ++ "args[i] = [=]{ return chk; };\n"
+                ++ "psl::set(args[i], psl::toChunk([=]{ return chk; }));\n"
                 ++ "}\n\n"
                 ++ "bool B = false, success;\n"
                 ++ "do {\n"

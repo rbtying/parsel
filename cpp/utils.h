@@ -6,7 +6,7 @@
 
 namespace psl
 {
-    Signal toSignal(double d);
+    Signal toSignal(Chunk<double> d);
 
     template<class F, class... Args>
     auto apply(F&& f, Args... as) -> decltype(f(as...))
@@ -17,7 +17,7 @@ namespace psl
     template<class T, class... Args>
     T apply(Chunk<std::function<T(Args...)>>& c, Args... as)
     {
-        c()(as...);
+        return c()(as...);
     }
 
     template<class F, class T>
@@ -32,6 +32,6 @@ namespace psl
         return Chunk<decltype(f())>(f);
     }
 
-    auto multiply = [](auto x, auto y) { return x * y; };
-    auto plus = [](auto x, auto y) { return x + y; };
+    auto multiply = [](auto x, auto y) { return x() * y(); };
+    auto plus = [](auto x, auto y) { return x() + y(); };
 }
