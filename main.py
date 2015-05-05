@@ -7,22 +7,30 @@ from test.builder import Builder
 from test.base import Base
 from test.tester import Tester
 def main():    
-    options = {1 : moreArgs, 2 : moreArgs, 3 : enoughArgs, 4 : enoughArgs, 5: enoughArgs }
+    options = {1 : moreArgs, 2 : enoughArgs, 3 : enoughArgs, 4 : enoughArgs, 5: enoughArgs }
     options[len(sys.argv)]()
-    
-    b = Builder(sys.argv[1], sys.argv[2])
-    t = Tester(sys.argv[2], sys.argv[3], 0)
+    if len(sys.argv) <= 2:
+        compile_to = "out.cpp"
+    else:
+        compile_to = sys.argv[2]
+    b = Builder(sys.argv[1], compile_to)
+    t = Tester("out.cpp", "out.cpp", 0)
     onlyfiles = [ f for f in listdir("src") if isfile(join("src",f)) ]
     files = []
     for f in onlyfiles:
         if len(f.split(".")) == 2:
             if f.split(".")[1] == "hs":
                 files.append("src/" + f)
+    onlyfiles = [ f for f in listdir("cpp") if isfile(join("cpp",f)) ] 
+    for f in onlyfiles:
+        files.append("cpp/" + f)
     times = []
     for f in files:
         times.append(os.stat(f).st_mtime)
     flag = False
     if len(sys.argv) == 4 and sys.argv[3] == "-v":
+        flag = True
+    if len(sys.argv) == 3 and sys.argv[2] == "-v":
         flag = True
     changes = 1
     while True and flag:
@@ -34,8 +42,8 @@ def main():
                     if os.path.isfile(files[counter]):
                         current = os.stat(files[counter]).st_mtime
                         if current != times[counter]:
-                            b = Builder(sys.argv[1], getCppName(sys.argv[2], changes%2))
-                            t = Tester(sys.argv[2], sys.argv[3], 1)
+                            b = Builder(sys.argv[1], getCppName("out.cpp", changes%2))
+                            t = Tester("out.cpp", "out.cpp", 0)
                             changes = changes + 1
                             times[counter] = current
                     counter = counter + 1
@@ -44,7 +52,7 @@ def main():
         except KeyboardInterrupt:
             sys.exit()
 def moreArgs():
-    print "\npython main.py <psl file> <cpp file to compile to> <example compiled cpp> (-v for running log)\n"
+    print "\npython main.py <psl file> (-v for running log)\n"
     sys.exit()
 
 def enoughArgs():
