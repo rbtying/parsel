@@ -1,4 +1,4 @@
 main(input[char]) -> (signal) =
-    let f(float x) -> int = x + 1
-        g(int x) -> int = 2 * x
+    let f(float x) -> float = x + 1
+        g(float x) -> float = 2 * x
     in toSignal with g(f(5))

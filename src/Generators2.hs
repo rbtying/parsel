@@ -17,7 +17,7 @@ genExpr (Literal val _) = toChunk $ show val
 
 genExpr (Str s) = toChunk s
 
--- this is WRONG! not lazy. but should still compile.
+-- TODO: this is not lazy
 genExpr (Attr expr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
 
 genExpr (Tuple exprs) = toChunk $ "std::make_tuple(" ++ es ++ ")"
@@ -25,9 +25,9 @@ genExpr (Tuple exprs) = toChunk $ "std::make_tuple(" ++ es ++ ")"
 
 genExpr (List exprs) = "{" ++ intercalate ", " (map genExpr exprs) ++ "}"
 
-genExpr (BinaryOp binOp e1 e2) = toChunk . genExpr $ binOpToFunc binOp e1 e2
+genExpr (BinaryOp binOp e1 e2) = genExpr $ binOpToFunc binOp e1 e2
 
-genExpr (UnaryOp unOp expr) = toChunk . genExpr $ unOpToFunc unOp expr
+genExpr (UnaryOp unOp expr) = genExpr $ unOpToFunc unOp expr
 
 genExpr (Func expr exprs) = toChunk $ "psl::apply(" ++ es ++ ")"
     where es = intercalate ", " $ map genExpr (expr:exprs)
@@ -47,6 +47,7 @@ genExpr (LetExp ds expr) = "[&]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
             out = genReturn expr
             n = '\n'
 
+-- TODO: is this lazy?
 genExpr (Cond expr1 expr2 expr3) = "[&]() {\n" ++ cond ++ "\n}"
     where   cond = "if(" ++ e1 ++ ") {\n" ++ e2 ++ "\n}\nelse {\n" ++ e3 ++ "\n};"
             e1 = genRawExpr expr1
@@ -67,4 +68,4 @@ genRawExpr e = genExpr e ++ "()"
 
 
 toChunk :: [Char] -> [Char]
-toChunk e = "psl::toChunk([&]() { return " ++ e ++ "; })"
+toChunk e = "psl::toChunk([&]() {\nreturn " ++ e ++ ";\n})"
