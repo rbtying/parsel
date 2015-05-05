@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <memory>
+#include "fft4g.c"
 
 namespace psl {
     FSignal::FSignal(freq_fill_t freq_f) :

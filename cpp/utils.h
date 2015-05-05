@@ -15,16 +15,16 @@ namespace psl
     }
 
     template<class T, class... Args>
-    T apply(Chunk<std::function<T(Args...)>> c, Args... as)
+    T apply(Chunk<std::function<T(Args...)>>& c, Args... as)
     {
         c()(as...);
     }
 
     template<class F, class T>
-    void set(Chunk<T> c, F&& f);
-//    {
-//        c = f;
-//    }
+    void set(Chunk<T>& c1, const Chunk<F>& c2)
+    {
+        c1.f_ = c2.f_;
+    }
 
     template<class F>
     auto toChunk(F&& f) -> Chunk<decltype(f())>
