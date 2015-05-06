@@ -15,5 +15,5 @@ class Builder(Base):
 
     def compileToCpp(self):
         self.toStringOutput("\nCompiling parsel file to C++ ... \n") 
-        cmd = "dist/build/parsel/parsel " + self.parsel_file + " " + self.cpp_file
+        cmd = "dist/build/parsel/parsel " + self.parsel_file
         self.startSubprocess(cmd)
