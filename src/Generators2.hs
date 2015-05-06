@@ -15,7 +15,7 @@ genExpr (Literal val ('m':_)) = toChunk $ show (val * 1.0e-3)
 genExpr (Literal val ('u':_)) = toChunk $ show (val * 1.0e-6)
 genExpr (Literal val _) = toChunk $ show val
 
-genExpr (Str s) = toChunk s
+genExpr (Str s) = toChunk $ "psl::fromString(" ++ s ++ ")"
 
 -- TODO: this is not lazy
 genExpr (Attr expr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym 
@@ -23,7 +23,8 @@ genExpr (Attr expr (Symbol sym)) = "(" ++ genRawExpr expr ++ ")" ++ "." ++ sym
 genExpr (Tuple exprs) = toChunk $ "std::make_tuple(" ++ es ++ ")"
     where es = intercalate ", " $ map genExpr exprs
 
-genExpr (List exprs) = "{" ++ intercalate ", " (map genExpr exprs) ++ "}"
+genExpr (List exprs) = toChunk $ "psl::toVector({" ++ es ++  "})"
+    where es = intercalate ", " $ map genExpr exprs
 
 genExpr (BinaryOp binOp e1 e2) = genExpr $ binOpToFunc binOp e1 e2
 

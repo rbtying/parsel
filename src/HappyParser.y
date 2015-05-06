@@ -71,6 +71,8 @@ Defs : Def                                          { [$1] }
      | Defs Def                                     { $2 : $1 }
 
 Def : Symbol '(' Tsyms ')' '->' Type '=' Expr       { FuncDef $1 $3 $6 $8 }
+    | Symbol '(' ')' '->' Type '=' Expr             { FuncDef $1 [] $5 $7 }
+    | Symbol '->' Type '=' Expr                     { FuncDef $1 [] $3 $5 }
     | Tsym '=' Expr                                 { VarDef $1 $3 }
 
 Exprs : Expr %prec expr                             { [$1] }
@@ -92,6 +94,7 @@ Expr : Literal                                      { $1 }
 LetExp : let Defs in Expr                           { LetExp $2 $4 }
 
 ApplyFunc : Expr '(' Exprs ')'                      { Func $1 $3 }
+          | Expr '(' ')'                            { Func $1 [] }
           | Expr with Exprs                         { Func $1 $3 }
           | Expr '\\' Symbol '\\' Expr              { let var = Var $3 $ getInd $2
                                                       in Func var [$1, $5] }

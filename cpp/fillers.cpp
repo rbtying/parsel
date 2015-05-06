@@ -9,29 +9,30 @@
 
 using namespace psl;
 
-fill_t psl::toWavFile(Signal* signalP, std::string filepath, float seconds)
+fill_t psl::toWavFile(Chunk<Signal> signal, std::string filepath, float seconds)
 {
     int format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-    int channels = signalP->channels();
+    int channels = signal().channels();
     std::shared_ptr<SndfileHandle> fileP(new SndfileHandle(filepath,
-                SFM_WRITE, format, channels, signalP->sampleRate()));
+                SFM_WRITE, format, channels, signal().sampleRate()));
     std::shared_ptr<int> samplesP(new int(0));
     std::shared_ptr<std::vector<short>> fbufferP(new std::vector<short>());
     std::shared_ptr<bool> moreP(new bool(true));
 
-    return [fileP, fbufferP, signalP, moreP, seconds](buffer_t* bufferP, bool B)
+    return [fileP, fbufferP, signal, moreP, seconds](buffer_t* bufferP, bool B) mutable
     {
-        signalP->fillBuffer(B);
-        int totalSamples = seconds * signalP->sampleRate();
-        int channels = signalP->channels();
+        signal().fillBuffer(B);
+        int totalSamples = seconds * signal().sampleRate();
+        int channels = signal().channels();
+        std::cout << fbufferP->size() << " " << totalSamples * channels << "\n";
         if(fbufferP->size() < totalSamples * channels)
         {
             int stopPos = std::min(totalSamples - fbufferP->size() / channels,
-                    signalP->buffer_.size());
+                    signal().buffer_.size());
 
             for(int s = 0; s < stopPos; s++)
                 for(int c = 0; c < channels; c++)
-                    fbufferP->push_back(std::real(signalP->buffer_[s][c]));
+                    fbufferP->push_back(std::real(signal().buffer_[s][c]));
         }
         else if(*moreP)
         {
@@ -42,7 +43,7 @@ fill_t psl::toWavFile(Signal* signalP, std::string filepath, float seconds)
         int bufferSize = bufferP->size();
         for(int s = 0; s < bufferSize; s++)
             for(int c = 0; c < channels; c++)
-                (*bufferP)[s][c] = signalP->buffer_[s][c];
+                (*bufferP)[s][c] = signal().buffer_[s][c];
 
         return *moreP;
     };
@@ -55,7 +56,7 @@ fill_t psl::fillFromFunction(op_tc f, int sampleRate, int channels)
     
     return [sampleRate, channels, f] (buffer_t* bufferP, bool B)
     {
-	// for now	
+        // for now	
     	int stopPos = bufferP->size();
     	
     	for (int s = 0; s < stopPos; s++)
@@ -97,9 +98,8 @@ fill_t psl::fillFromFile(SndfileHandle& file)
     	for(int i = stopPos; i < bufferP->size(); i++)
     	{
     	    (*bufferP)[i] = std::vector<std::complex<double>>(channels, 0);
-	}
+        }
     	return stopPos == bufferP->size();
-   
     };
 }
 

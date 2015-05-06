@@ -25,7 +25,8 @@ handleArgs (infile:[]) = do
     if True --(null errors)
         then do
             writeFile "main.cpp" $ generateCode parse --newparse
-            _ <- runCommand "make"
+            process <- runCommand "make"
+            _ <- waitForProcess process
             return ()
         else do
             putStrLn $ "Error: " ++ intercalate "\n" (map show errors)

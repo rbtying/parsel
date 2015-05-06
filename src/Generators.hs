@@ -49,19 +49,27 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
                 ++ "psl::set(args[i], psl::toChunk([=]{ return chk; }));\n"
                 ++ "}\n\n"
                 ++ "bool B = false, success;\n"
+                ++ "auto fc = out()(" ++ args ++ ");\n"
+                ++ concat (map dec [1..tsize])
                 ++ "do {\n"
                 ++ "B = !B;\n"
-                ++ "auto fc = out()(" ++ args ++ ");\n"
                 ++ "success = " ++ fills ++ ";\n"
                 ++ "} while (success);\n"
-            fills = intercalate " && " $ map fill ([0..(length ts)-1])
-            fill n = "std::get<" ++ show(n) ++ ">(fc)().fillBuffer(B)"
-            args = intercalate ", " $ map arg (reverse [1..numSigs])
-            arg n = "args[" ++ show (n) ++ "]" 
+            dec n =
+                let name = "psl::Chunk<psl::Signal> writer"
+                    call = "(psl::makeWriter(args[" ++ i 1 ++ "], fc[" ++ i 2 ++ "]))"
+                    i p = "argc-" ++ show p ++ "-" ++ show tsize ++ "+" ++ show n
+                in name ++ show n ++ call ++ ";\n"
+            fills = intercalate " && " $ map fill [1..tsize]
+            fill n = "writer" ++ show n ++ "().fillBuffer(B)"
+            args = intercalate ", " . map arg $ reverse [1..numSigs]
+            arg n = "args[" ++ show n ++ "]" 
             numSigs = length tsyms
             TupleType ts = rt
+            rt' = ListType . Type . Symbol $ "signal"
+            tsize = length ts
 
-            (topdef, code, _) = genDef (FuncDef (Symbol "out") tsyms rt expr)
+            (topdef, code, _) = genDef (FuncDef (Symbol "out") tsyms rt' $ List [expr])
         in (topdef, code, mainloop)
     | otherwise = 
         let def = "psl::set(" ++ sym ++ ", " ++

@@ -1,4 +1,1 @@
-main(input[char]) -> (signal) =
-    let f(float x) -> float = x + 1
-        g(float x) -> float = 2 * x
-    in toSignal with g(f(5))
+main() -> (signal) = fromWav("audio/dog.wav")
