@@ -5,6 +5,12 @@
 #include "fft4g.c"
 
 namespace psl {
+    fill_t fillFromFrequency(Chunk<FSignal> fsignal)
+    {
+        return [&](buffer_t* bufferP, bool B) {
+            return true;
+        };
+    }
     FSignal::FSignal(freq_fill_t freq_f) :
         freq_f_(freq_f), consistent_(false), bins_(0)
     {
@@ -13,7 +19,7 @@ namespace psl {
         assert(bufsize && !(bufsize & (bufsize - 1)));
     }
 
-    FSignal::FSignal(Signal& sig, utime_t timestep) :
+    FSignal::FSignal(Chunk<Signal> sig, utime_t timestep) :
         freq_f_(fillFromSignal(sig, timestep)),
         consistent_(false), bins_(0)
     {
@@ -58,6 +64,29 @@ namespace psl {
         }
         bins_ = n;
 
+        timeSpace_.buffer_.clear();
+        timeSpace_.buffer_.resize(n);
+
+
+        for (int channel = 0; channel < timeSpace_.channels(); ++channel)
+        {
+            long idx = 0;
+            for (fbuffer_t::const_iterator iter = buf.begin(); iter != buf.end(); ++iter)
+            {
+                const fsample_t samp = *iter;
+                a[2 * idx] = samp[channel].real();
+                a[2 * idx + 1] = samp[channel].imag();
+                ++idx;
+            }
+
+            cdft(n, -1, a, ip, w);
+
+            // a now contains the frequency-domain interpretation
+            for (int k = 0; k < n; ++k) {
+                timeSpace_.buffer_[k].push_back(std::complex<double>(a[2 * k], a[2 * k + 1]));
+            }
+        }
+
         consistent_ = true;
     }
 
@@ -68,24 +97,22 @@ namespace psl {
         return success;
     }
 
-    freq_fill_t FSignal::fillFromSignal(Signal& sig, utime_t timestep)
+    freq_fill_t FSignal::fillFromSignal(Chunk<Signal> sig, utime_t timestep)
     {
-        std::shared_ptr<Signal> sigptr(&sig);
-
-        return [sigptr, timestep](Interval* itvl, bool B) {
+        return [&sig, timestep](Interval* itvl, bool B) {
             // start after end of last interval
             utime_t start_time = itvl->end();
             utime_t end_time = start_time + timestep;
 
-            while (sigptr->buffer_->size() < end_time * sigptr->sampleRate()) {
-                bool success = sigptr->fillBuffer(B);
+            while (sig().buffer_->size() < end_time * sig().sampleRate()) {
+                bool success = sig().fillBuffer(B);
                 B = !B;
                 if (!success) {
                     return false;
                 }
             }
 
-            *itvl = Interval(*sigptr, start_time, end_time);
+            *itvl = Interval(sig, start_time, end_time);
             return true;
         };
     }

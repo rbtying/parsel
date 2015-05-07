@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Signal.h"
+#include "FSignal.h"
 #include "Chunk.h"
 #include "fillers.h"
 
@@ -59,6 +60,16 @@ namespace psl
             cs[i] = toChunk([s, i]() { return s[i]; });
         }
         return cs;
+    }
+
+    Signal ift(Chunk<FSignal> fsignal)
+    {
+        return Signal(psl::fillFromFrequency(fsignal), fsignal().sampleRate(), fsignal().channels());
+    }
+
+    FSignal ft(Chunk<Signal> signal)
+    {
+        return FSignal(signal, 1024);
     }
 
     Signal fromWav(Chunk<std::vector<Chunk<char>>> file)

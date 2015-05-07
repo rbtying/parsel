@@ -15,3 +15,5 @@ bin/*
 */bin/*
 test/.*pyc
 main.cpp
+*.log
+out*.wav

@@ -4,6 +4,7 @@
 #include <complex>
 #include <functional>
 #include <memory>
+#include "Chunk.h"
 
 // forward declaration
 class SndfileHandle;

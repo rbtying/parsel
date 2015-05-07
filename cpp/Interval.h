@@ -3,6 +3,7 @@
 #include <vector>
 #include <complex>
 #include <functional>
+#include "Chunk.h"
 #include "Signal.h"
 
 namespace psl
@@ -25,7 +26,8 @@ namespace psl
              * \param startTime the start time of the interval
              * \param endTime the end time of the interval
              */
-            Interval(const Signal& sig, utime_t startTime, utime_t endTime);
+            Interval(Chunk<Signal> sig, utime_t startTime, utime_t endTime);
+            Interval(const Interval& other);
             Interval& operator=(const Interval& other);
             Interval();
 
