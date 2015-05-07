@@ -63,7 +63,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
                     arg3 = "args[argc-1]"
                     call = "(psl::makeWriter(" ++ arg1 ++ arg2 ++ arg3 ++ "))"
                 in name ++ show n ++ call ++ ";\n"
-            fills = intercalate " && " $ map fill [1..tsize]
+            fills = intercalate " | " $ map fill [1..tsize]
             fill n = "writer" ++ show n ++ "().fillBuffer(B)"
             args = intercalate ", " . map arg $ reverse [1..numSigs]
             arg n = "args[" ++ show n ++ "]" 
