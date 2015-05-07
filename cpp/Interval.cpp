@@ -15,9 +15,9 @@ namespace psl
         long end_offset = endTime_ * sampleRate_;
 
         // fail hard if we can't construct a valid interval
-        assert(end_offset < sig.buffer_.size());
+        assert(end_offset < sig.buffer_->size());
 
-        buffer_.assign(sig.buffer_.begin() + start_offset, sig.buffer_.begin() + end_offset);
+        buffer_.assign(sig.buffer_->begin() + start_offset, sig.buffer_->begin() + end_offset);
     }
 
     Interval& Interval::operator=(const Interval& other)

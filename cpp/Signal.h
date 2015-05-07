@@ -3,6 +3,7 @@
 #include <vector>
 #include <complex>
 #include <functional>
+#include <memory>
 
 // forward declaration
 class SndfileHandle;
@@ -15,7 +16,7 @@ namespace psl
             std::complex<double>)> op_ta;
     typedef std::function<std::complex<double>(std::complex<double>)> op_tb;
     typedef std::function<std::complex<double>(double)> op_tc;
-    
+
 
     typedef unsigned long utime_t;
 
@@ -27,8 +28,9 @@ namespace psl
     public:
         Signal(std::string filepath);
         Signal(fill_t fill, int sampleRate, int channels);
-	
-       
+        Signal(const Signal& copy);
+        Signal& operator=(const Signal& other);
+
        	bool fillBuffer(bool B);
 
         int sampleRate() const;
@@ -36,25 +38,26 @@ namespace psl
 
         Signal add(Signal* s);
         Signal add(double s);
-        
+
         Signal sub(Signal* s);
         Signal sub(double s);
-        
+
         Signal mul(Signal* s);
         Signal mul(double s);
-        
+
         Signal div(Signal* s);
         Signal div(double s);
-        
+
         Signal shift(utime_t delay);
 
         fill_t fill_;
-        buffer_t buffer_;
+        std::shared_ptr<buffer_t> buffer_;
 
     private:
         Signal(SndfileHandle& file);
 
-        bool cacheB_, firstRun_, more_;
+        std::shared_ptr<bool> cacheB_, firstRun_, more_;
         int sampleRate_, channels_;
+
     };
 }

@@ -77,7 +77,7 @@ namespace psl {
             utime_t start_time = itvl->end();
             utime_t end_time = start_time + timestep;
 
-            while (sigptr->buffer_.size() < end_time * sigptr->sampleRate()) {
+            while (sigptr->buffer_->size() < end_time * sigptr->sampleRate()) {
                 bool success = sigptr->fillBuffer(B);
                 B = !B;
                 if (!success) {

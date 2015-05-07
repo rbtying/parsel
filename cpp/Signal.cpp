@@ -19,24 +19,45 @@ Signal::Signal(SndfileHandle& file) :
 { }
 
 Signal::Signal(fill_t fill, int sampleRate, int channels) :
-    buffer_(sampleRate * BUFFER_SECS, sample_t(channels, 0)),
+    buffer_(new buffer_t(sampleRate * BUFFER_SECS, sample_t(channels, 0))),
     fill_(fill),
+    cacheB_(new bool(false)),
+    firstRun_(new bool(true)),
+    more_(new bool(true)),
     sampleRate_(sampleRate),
-    cacheB_(),
-    firstRun_(true),
-    more_(true),
     channels_(channels)
 { }
 
+Signal::Signal(const Signal& other) :
+    buffer_(other.buffer_),
+    fill_(other.fill_),
+    cacheB_(other.cacheB_),
+    firstRun_(other.firstRun_),
+    more_(other.more_),
+    sampleRate_(other.sampleRate_),
+    channels_(other.channels_)
+{ }
+
+Signal& Signal::operator=(const Signal& other)
+{
+    buffer_ = other.buffer_;
+    fill_ = other.fill_;
+    cacheB_ = other.cacheB_;
+    firstRun_ = other.firstRun_;
+    more_ = other.more_;
+    sampleRate_ = other.sampleRate_;
+    channels_ = other.channels_;
+}
+
 bool Signal::fillBuffer(bool B)
 {
-    if(B != cacheB_ || firstRun_)
+    if(B != *cacheB_ || *firstRun_)
     {
-        more_ = fill_(&buffer_, B);
-        cacheB_ = B;
-        firstRun_ = false;
+        *more_ = fill_(&(*buffer_), B);
+        *cacheB_ = B;
+        *firstRun_ = false;
     }
-    return more_;
+    return *more_;
 }
 
 int Signal::sampleRate() const
@@ -50,7 +71,7 @@ int Signal::channels() const
 }
 
 
-Signal Signal::add(Signal* s) 
+Signal Signal::add(Signal* s)
 {
     op_ta f = [](std::complex<double> l, std::complex<double> r) {return l+r;};
 
@@ -60,12 +81,12 @@ Signal Signal::add(Signal* s)
 Signal Signal::add(double s)
 {
     op_tb f = [s](std::complex<double> l) {return l + std::complex<double>(s);};
-     
+
     return Signal(fillFromOperator(f, this), sampleRate_, channels_);
 
 }
 
-Signal Signal::sub(Signal* s) 
+Signal Signal::sub(Signal* s)
 {
     op_ta f = [](std::complex<double> l, std::complex<double> r) {return l-r;};
 
@@ -75,31 +96,31 @@ Signal Signal::sub(Signal* s)
 Signal Signal::sub(double s)
 {
     op_tb f = [s](std::complex<double> l) {return l - std::complex<double>(s);};
-     
+
     return Signal(fillFromOperator(f, this), sampleRate_, channels_);
 
 }
 
-Signal Signal::mul(Signal* s) 
+Signal Signal::mul(Signal* s)
 {
     op_ta f = [](std::complex<double> l, std::complex<double> r) {return l*r;};
-    
+
     return Signal(fillFromOperator(f, this, s), sampleRate_, channels_);
-    
+
 }
 
 Signal Signal::mul(double s)
 {
-    op_tb f = [s](std::complex<double> l) 
+    op_tb f = [s](std::complex<double> l)
     {
     	return l * std::complex<double>(s);
     };
-     
+
     return Signal(fillFromOperator(f, this), sampleRate_, channels_);
 
 }
 
-Signal Signal::div(Signal* s) 
+Signal Signal::div(Signal* s)
 {
     op_ta f = [](std::complex<double> l, std::complex<double> r) {return l/r;};
 
@@ -110,7 +131,7 @@ Signal Signal::div(Signal* s)
 Signal Signal::div(double s)
 {
     op_tb f = [s](std::complex<double> l) {return l / std::complex<double>(s);};
-     
+
     return Signal(fillFromOperator(f, this), sampleRate_, channels_);
 
 }
