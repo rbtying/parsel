@@ -24,7 +24,6 @@ fill_t psl::toWavFile(psl::Chunk<Signal> signal, std::string filepath, float sec
         signal().fillBuffer(B);
         int totalSamples = seconds * signal().sampleRate();
         int channels = signal().channels();
-        std::cout << fbufferP->size() << " " << totalSamples * channels << std::endl;
         if(fbufferP->size() < totalSamples * channels)
         {
             int stopPos = std::min(totalSamples - fbufferP->size() / channels,
@@ -40,7 +39,6 @@ fill_t psl::toWavFile(psl::Chunk<Signal> signal, std::string filepath, float sec
         {
             fileP->write(fbufferP->data(), fbufferP->size());
             *moreP = false;
-            std::cout << "total size " << fbufferP->size() << std::endl;
         }
 
         int bufferSize = bufferP->size();

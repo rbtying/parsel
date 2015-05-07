@@ -1,1 +1,4 @@
-main() -> (signal) = fromWav("audio/dog.wav")
+main(input[char], otherinput[char]) -> (signal, signal) =
+    let signal outone = fromWav(input)
+        signal outtwo = fromWav(otherinput)
+    in [outtwo, outtwo]

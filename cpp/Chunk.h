@@ -13,7 +13,6 @@ namespace psl
     public:
         Chunk();
         Chunk(std::function<T()> f);
-        Chunk(std::shared_ptr<T> ptr);
         T operator()();
 
         std::function<T()> f_;
@@ -39,17 +38,10 @@ Chunk<T>::Chunk(std::function<T()> f) :
 { }
 
 template<class T>
-Chunk<T>::Chunk(std::shared_ptr<T> ptr) :
-    cache_(ptr)
-{ assert(ptr != nullptr); }
-
-
-template<class T>
 T Chunk<T>::operator()()
 {
-    if(cache_ == nullptr) {
+    if(cache_ == nullptr)
         cache_ = std::make_shared<T>(f_());
-    }
 
     return *cache_;
 }

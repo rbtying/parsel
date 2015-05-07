@@ -45,20 +45,23 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
         let mainloop = "psl::Chunk<std::vector<psl::Chunk<char>>> args[argc];\n"
                 ++ "for (int i = 0; i < argc; i++) {\n"
                 ++ "std::vector<psl::Chunk<char>> chk(strlen(argv[i])+1);\n"
-                ++ "std::transform(argv[i], argv[i]+strlen(argv[i])+1, chk.begin(), chr2Chunk);\n"
+                ++ "std::transform(argv[i], "
+                ++ "argv[i]+strlen(argv[i])+1, chk.begin(), chr2Chunk);\n"
                 ++ "psl::set(args[i], psl::toChunk([=]{ return chk; }));\n"
                 ++ "}\n\n"
                 ++ "bool B = false, success;\n"
                 ++ "auto fc = out()(" ++ args ++ ");\n"
-                ++ concat (map dec [1..tsize])
+                ++ concat (map dec [tsize,tsize-1..1])
                 ++ "do {\n"
                 ++ "B = !B;\n"
                 ++ "success = " ++ fills ++ ";\n"
                 ++ "} while (success);\n"
             dec n =
                 let name = "psl::Chunk<psl::Signal> writer"
-                    call = "(psl::makeWriter(args[" ++ i 1 ++ "], fc[" ++ i 2 ++ "]))"
-                    i p = "argc-" ++ show p ++ "-" ++ show tsize ++ "+" ++ show n
+                    arg1 = "args[argc+(" ++ show (n - 2 - tsize) ++ ")], "
+                    arg2 = "fc[" ++ show (n - 1) ++ "], "
+                    arg3 = "args[argc-1]"
+                    call = "(psl::makeWriter(" ++ arg1 ++ arg2 ++ arg3 ++ "))"
                 in name ++ show n ++ call ++ ";\n"
             fills = intercalate " && " $ map fill [1..tsize]
             fill n = "writer" ++ show n ++ "().fillBuffer(B)"
@@ -69,7 +72,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
             rt' = ListType . Type . Symbol $ "signal"
             tsize = length ts
 
-            (topdef, code, _) = genDef (FuncDef (Symbol "out") tsyms rt' $ List [expr])
+            (topdef, code, _) = genDef (FuncDef (Symbol "out") tsyms rt' expr)
         in (topdef, code, mainloop)
     | otherwise = 
         let def = "psl::set(" ++ sym ++ ", " ++
@@ -79,7 +82,7 @@ genDef (FuncDef (Symbol sym) tsyms rt expr)
         in (decl, def, "")
 
 genDef (VarDef tsym expr) = (decl, def, "")
-    where   def = sym ++ " = [&]() {\n" ++ genReturn expr ++  "\n};\n"
+    where   def = "psl::set(" ++ sym ++ ", " ++ genExpr expr ++  ");\n"
             Tsym _ (Symbol sym) = tsym
             decl = genTsym tsym ++ ";\n"
 

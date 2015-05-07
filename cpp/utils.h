@@ -11,13 +11,13 @@
 namespace psl
 {
     template<class F, class... Args>
-    auto apply(const F&& f, Args... as) -> decltype(f(as...))
+    auto apply(const F& f, Args... as) -> decltype(f(as...))
     {
         return f(as...);
     }
 
     template<class T, class... Args>
-    T apply(Chunk<std::function<T(Args...)>>& c, Args... as)
+    T apply(Chunk<std::function<T(Args...)>> c, Args... as)
     {
         return c()(as...);
     }
@@ -29,7 +29,7 @@ namespace psl
     }
 
     template<class F>
-    auto toChunk(const F& f) -> Chunk<decltype(f())>
+    auto toChunk(F f) -> Chunk<decltype(f())>
     {
         return Chunk<decltype(f())>(f);
     }
@@ -68,13 +68,13 @@ namespace psl
         return Signal(string);
     }
 
-    // TODO: fix seconds thing, make this lazy?
+    // TODO: is this lazy?
     std::function<Signal()> makeWriter(Chunk<std::vector<Chunk<char>>> path,
-            Chunk<Signal> signal)
+            Chunk<Signal> signal, Chunk<std::vector<Chunk<char>>> time)
     {
         return [=]() mutable
         {
-            return Signal(toWavFile(signal, toString(path()), 1),
+            return Signal(toWavFile(signal, toString(path()), stoi(toString(time()))),
                     signal().sampleRate(), signal().channels());
         };
     }
