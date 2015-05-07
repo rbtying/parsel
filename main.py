@@ -9,11 +9,9 @@ from test.tester import Tester
 def main():    
     options = {1 : moreArgs, 2 : enoughArgs, 3 : enoughArgs, 4 : enoughArgs, 5: enoughArgs }
     options[len(sys.argv)]()
-    if len(sys.argv) <= 2:
-        compile_to = "out.cpp"
-    else:
-        compile_to = sys.argv[2]
-    b = Builder(sys.argv[1], compile_to)
+    if len(sys.argv) > 2:
+        sample_file = sys.argv[2]
+    b = Builder(sys.argv[1], "out.cpp")
     t = Tester("out.cpp", "out.cpp", 0)
     onlyfiles = [ f for f in listdir("src") if isfile(join("src",f)) ]
     files = []
@@ -43,7 +41,10 @@ def main():
                         current = os.stat(files[counter]).st_mtime
                         if current != times[counter]:
                             b = Builder(sys.argv[1], getCppName("out.cpp", changes%2))
-                            t = Tester("out.cpp", "out.cpp", 0)
+                            if len(sys.argv) > 2:
+                                t = Tester("out.cpp", sample_file, 2)
+                            else:
+                                t = Tester("out.cpp", "out.cpp", 1)
                             changes = changes + 1
                             times[counter] = current
                     counter = counter + 1

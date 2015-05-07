@@ -10,6 +10,9 @@ class Tester(Base):
             self.toStringOutput("\nComparing compiled files ...\n") 
             cmd = "diff " + self.expanded_file[0] + "1.cpp " + self.expanded_file[0] + "2.cpp -p"
             self.startSubprocess(cmd)
- 
+        if self.option == 2:
+            self.toStringOutput("\nComparing compiled files ...\n")
+            cmd = "diff " + self.compiled_file + " " + self.example_file
+            self.startSubprocess(cmd)
     def testStuff():
         pass
