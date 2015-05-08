@@ -12,7 +12,7 @@ class Tester(Base):
             self.startSubprocess(cmd)
         if self.option == 2:
             self.toStringOutput("\nComparing compiled files ...\n")
-            cmd = "diff " + self.compiled_file + " " + self.example_file
+            cmd = "diff " + self.compiled_file + " " + self.example_file + " -p"
             self.startSubprocess(cmd)
     def testStuff():
         pass
