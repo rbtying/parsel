@@ -2,10 +2,10 @@ import os.path
 from base import Base
 
 class Builder(Base):
-    def __init__(self, parsel_file, cpp_file, output_file, options):
+    def __init__(self, parsel_file, cpp_file, program_files, options):
         self.parsel_file = parsel_file
         self.cpp_file = cpp_file
-        self.output_file = output_file
+        self.program_files = program_files
         self.options = options
         if options == 1:
             self.build()
@@ -35,7 +35,9 @@ class Builder(Base):
     def runProgram(self):
         if self.programAvailable() == True:
             self.toStringOutput("\nRunning binary ...\n")
-            cmd = "compiled_sample/bin/" + self.getName(self.parsel_file) + " " + self.output_file
+            cmd = "compiled_sample/bin/" + self.getName(self.parsel_file) + " "
+            for f in self.program_files:
+                cmd = cmd + f + " "
             self.startSubprocess(cmd)
         else:
             self.toStringOutput("\nMake failed! \n")
