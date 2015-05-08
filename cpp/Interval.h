@@ -38,9 +38,9 @@ namespace psl
             int channels() const { return channels_; }
 
             const buffer_t& buffer() const { return buffer_; }
+            buffer_t buffer_;
 
         private:
-            buffer_t buffer_;
             utime_t startTime_;
             utime_t endTime_;
             int sampleRate_;

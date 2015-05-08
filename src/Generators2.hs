@@ -43,13 +43,13 @@ genExpr (Var (Symbol sym) _)
 
 genExpr (Lambda tsyms _ expr) = toChunk $ genLambda tsyms expr
 
-genExpr (LetExp ds expr) = "[=]() {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
+genExpr (LetExp ds expr) = "[=]() mutable {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
     where   (decs, defs) = genDefs ds
             out = genReturn expr
             n = '\n'
 
 -- TODO: is this lazy?
-genExpr (Cond expr1 expr2 expr3) = "[=]() {\n" ++ cond ++ "\n}"
+genExpr (Cond expr1 expr2 expr3) = "[=]() mutable {\n" ++ cond ++ "\n}"
     where   cond = "if(" ++ e1 ++ ") {\n" ++ e2 ++ "\n}\nelse {\n" ++ e3 ++ "\n};"
             e1 = genRawExpr expr1
             e2 = genReturn expr2
@@ -57,7 +57,7 @@ genExpr (Cond expr1 expr2 expr3) = "[=]() {\n" ++ cond ++ "\n}"
 
 
 genLambda :: Tsyms -> Expr -> [Char]
-genLambda tsyms expr = "[=](" ++ args ++ ") {\n " ++ body ++ "\n}"
+genLambda tsyms expr = "[=](" ++ args ++ ") mutable {\n " ++ body ++ "\n}"
     where   args = intercalate ", " $ map genTsym tsyms
             body = genReturn expr
 
@@ -69,4 +69,4 @@ genRawExpr e = genExpr e ++ "()"
 
 
 toChunk :: [Char] -> [Char]
-toChunk e = "psl::toChunk([=]() {\nreturn " ++ e ++ ";\n})"
+toChunk e = "psl::toChunk([=]() mutable {\nreturn " ++ e ++ ";\n})"

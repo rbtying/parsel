@@ -48,13 +48,13 @@ import AST
 %left let in
 %right '\\'
 %left expr
-%left with
-%left ','
-%left '('
 %left and or
 %left '<' '>' '<=' '>=' '!=' '=='
 %left '+' '-'
 %left '*' '/'
+%left with
+%left ','
+%left '('
 %right '!'
 %left '.'
 %%

@@ -1,4 +1,5 @@
 #include "fillers.h"
+#include "utils.h"
 
 #include <cassert>
 #include <sndfile.hh>
@@ -6,6 +7,7 @@
 #include <memory>
 #include <fstream>
 #include <sstream>
+#include <climits>
 
 using namespace psl;
 
@@ -29,11 +31,17 @@ fill_t psl::toWavFile(psl::Chunk<Signal> signal, std::string filepath, float sec
             int stopPos = std::min(totalSamples - fbufferP->size() / channels,
                     signal().buffer_->size());
 
-            for(int s = 0; s < stopPos; s++) {
-                for(int c = 0; c < channels; c++) {
-                    fbufferP->push_back(std::real((*(signal().buffer_))[s][c]));
+            for(int s = 0; s < stopPos; s++)
+                for(int c = 0; c < channels; c++)
+                {
+                    double val = std::real((*signal().buffer_)[s][c]);
+                    if(val > 1)
+                        val = 1;
+                    else if(val < -1)
+                        val = -1;
+
+                    fbufferP->push_back(val * SHRT_MAX);
                 }
-            }
         }
         else if(*moreP)
         {
@@ -50,27 +58,25 @@ fill_t psl::toWavFile(psl::Chunk<Signal> signal, std::string filepath, float sec
     };
 }
 
-fill_t psl::fillFromFunction(op_tc f, int sampleRate, int channels)
+fill_t psl::fillFromFunction(Chunk<dubop_t> f, int sampleRate, int channels)
 {
-
-    std::shared_ptr<bool> moreP(new bool(true));
-
-    return [sampleRate, channels, f] (buffer_t* bufferP, bool B)
+    std::shared_ptr<int> s = std::make_shared<int>(0);
+    return [s, sampleRate, channels, f] (buffer_t* bufferP, bool B) mutable
     {
-        // for now
-    	int stopPos = bufferP->size();
+        int startS = *s;
+    	int stopPos = *s + bufferP->size();
 
-    	for (int s = 0; s < stopPos; s++)
+    	for (; *s < stopPos; (*s)++)
     	{
-    	    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
-    	    for(int c = 0; c < channels; c++)
+            int sample = *s;
+            Chunk<double> time = toChunk([sample, sampleRate]()
+                    { return (double)sample / sampleRate; });
+            std::complex<double> val = f()(time);
 
-    	    	// trying to get from sample -> time....
-    	    	(*bufferP)[s][c] = f(s / sampleRate);
+    	    (*bufferP)[sample - startS] = std::vector<std::complex<double>>(channels, val);
     	}
 
-    	return stopPos == bufferP->size();
-
+    	return bufferP->size() + *s < 0;
     };
 }
 
@@ -83,132 +89,101 @@ fill_t psl::fillFromFile(SndfileHandle& file)
     std::shared_ptr<int> frameP(new int(0));
     int channels = file.channels();
 
-    return [channels, fileDataP, frameP](buffer_t* bufferP, bool)
+    return [channels, fileDataP, frameP](buffer_t* bufferP, bool) mutable
     {
     	int stopPos = std::min(bufferP->size(), fileDataP->size() / channels - *frameP);
     	for (int f = 0; f < stopPos; f++)
     	{
     	    (*bufferP)[f] = std::vector<std::complex<double>>(channels);
     	    for(int c = 0; c < channels; c++)
-    	    {
-    	    	(*bufferP)[f][c] = fileDataP->at(((*frameP + f) * channels) + c);
-    	    }
+    	    	(*bufferP)[f][c] = (double)fileDataP->at(((*frameP + f) * channels) + c) /
+                        SHRT_MAX;
     	}
         *frameP += stopPos;
     	for(int i = stopPos; i < bufferP->size(); i++)
-    	{
     	    (*bufferP)[i] = std::vector<std::complex<double>>(channels, 0);
-        }
+
     	return stopPos == bufferP->size();
     };
 }
 
-fill_t psl::fillFromOperator(op_ta f, Signal* lhs, Signal* rhs)
+fill_t psl::fillFromOperator(binop_t f, Chunk<Signal> lhs, Chunk<Signal> rhs)
 {
-    std::shared_ptr<bool> moreP(new bool(true));
-
     // fail if two signals arent the same
-    assert(lhs->channels() == rhs->channels());
-    assert(lhs->sampleRate() == rhs->sampleRate());
+    assert(lhs().channels() == rhs().channels());
+    assert(lhs().sampleRate() == rhs().sampleRate());
 
-    return [lhs, rhs, moreP, f](buffer_t* bufferP, bool B)
+    return [lhs, rhs, f](buffer_t* bufferP, bool B) mutable
     {
-	std::ofstream myfile;
-	myfile.open("temp.txt");
-	bool l_ok = lhs->fillBuffer(B);
-	bool r_ok = rhs->fillBuffer(B);
+        std::ofstream myfile;
+        myfile.open("temp.txt");
+        bool l_ok = lhs().fillBuffer(B);
+        bool r_ok = rhs().fillBuffer(B);
 
-	// TODO: shorter signal needs to be filled with 0's
-	int stopPos = std::min(lhs->buffer_->size(), rhs->buffer_->size());
-	int channels = lhs->channels();
-	if (l_ok && r_ok)
-	{
-	    for (int s = 0; s < stopPos; s++)
-	    {
-		(*bufferP)[s] = std::vector<std::complex<double>>(channels);
-		for (int c = 0; c < channels; c++)
-		{
-		    (*bufferP)[s][c] = f((*(lhs->buffer_))[s][c], (*(rhs->buffer_))[s][c]);
-		}
-	    }
-	    myfile.close();
-	    return *moreP;
-	}
-	else {
-	    return *moreP = false;
-	}
+        int stopPos = std::min(lhs().buffer_->size(), rhs().buffer_->size());
+        int channels = lhs().channels();
+
+        for (int s = 0; s < stopPos; s++)
+        {
+            (*bufferP)[s] = std::vector<std::complex<double>>(channels);
+            for(int c = 0; c < channels; c++)
+                (*bufferP)[s][c] = f((*(lhs().buffer_))[s][c],
+                        (*(rhs().buffer_))[s][c]);
+        }
+        myfile.close();
+
+        return l_ok && r_ok;
     };
 }
 
-fill_t psl::fillFromOperator(op_tb f, Signal* lhs)
+fill_t psl::fillFromOperator(unop_t f, Chunk<Signal> signal)
 {
-    std::shared_ptr<bool> moreP(new bool(true));
-
-
-    return [lhs, moreP, f](buffer_t* bufferP, bool B)
+    return [signal, f](buffer_t* bufferP, bool B) mutable
     {
-	bool l_ok = lhs->fillBuffer(B);
+        bool l_ok = signal().fillBuffer(B);
 
-	int stopPos = lhs->buffer_->size();
-	int channels = lhs->channels();
-	if (l_ok)
-	{
+        int stopPos = signal().buffer_->size();
+        int channels = signal().channels();
 	    for (int s = 0; s < stopPos; s++)
 	    {
-		(*bufferP)[s] = std::vector<std::complex<double>>(channels);
-		for (int c = 0; c < channels; c++)
-		{
-		    (*bufferP)[s][c] = f((*(lhs->buffer_))[s][c]);
-		}
+            (*bufferP)[s] = std::vector<std::complex<double>>(channels);
+            for (int c = 0; c < channels; c++)
+                (*bufferP)[s][c] = f((*(signal().buffer_))[s][c]);
 	    }
-	    return *moreP;
-	}
-	else {
-	    return *moreP = false;
-	}
+	    return l_ok;
     };
 }
 
-fill_t psl::fillFromPhaseShift(utime_t delay, Signal* sig)
+fill_t psl::fillFromPhaseShift(utime_t delay, Chunk<Signal> signal)
 {
-    std::shared_ptr<bool> moreP(new bool(true));
-
-    return [delay, sig, moreP](buffer_t* bufferP, bool B)
+    return [delay, signal](buffer_t* bufferP, bool B) mutable
     {
 
-	int stopPos = sig->buffer_->size();
-	int channels = sig->channels();
-	int startPos = abs(delay) * sig->sampleRate();
+        int stopPos = signal().buffer_->size();
+        int channels = signal().channels();
+        int startPos = abs(delay) * signal().sampleRate();
 
-	bool success = sig->fillBuffer(B);
-	if (success)
-	{
-	    if (delay >= 0) {
-		for(int s = 0; s < startPos; s++)
-		    (*bufferP)[s] = std::vector<std::complex<double>>(channels, 0);
-		for (int s = startPos; s < stopPos; s++)
-		{
-		    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
-		    for (int c = 0; c < channels; c++)
-		    {
-			(*bufferP)[s][c] = (*(sig->buffer_))[s][c];
-		    }
-		}
+        bool success = signal().fillBuffer(B);
 
-	    } else {
-		for (int s = 0; s < stopPos-startPos; s++) {
-
-		    (*bufferP)[s] = std::vector<std::complex<double>>(channels);
-		    for (int c = 0; c < channels; c++)
-		    {
-			(*bufferP)[s][c] = (*(sig->buffer_))[s+startPos][c];
-		    }
-		}
+	    if (delay >= 0)
+        {
+            for(int s = 0; s < startPos; s++)
+                (*bufferP)[s] = std::vector<std::complex<double>>(channels, 0);
+            for (int s = startPos; s < stopPos; s++)
+            {
+                (*bufferP)[s] = std::vector<std::complex<double>>(channels);
+                for (int c = 0; c < channels; c++)
+                    (*bufferP)[s][c] = (*(signal().buffer_))[s][c];
+            }
 	    }
-	    return *moreP;
-	}
-	else
-	    return *moreP = false;
+        else
+            for (int s = 0; s < stopPos-startPos; s++)
+            {
+                (*bufferP)[s] = std::vector<std::complex<double>>(channels);
+                for (int c = 0; c < channels; c++)
+                    (*bufferP)[s][c] = (*(signal().buffer_))[s+startPos][c];
+            }
+	    return success;
     };
 }
 

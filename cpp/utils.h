@@ -1,18 +1,16 @@
 #pragma once
 
 #include "Signal.h"
-#include "FSignal.h"
 #include "Chunk.h"
 #include "fillers.h"
 
 #include <vector>
 #include <string>
-#include <algorithm>
 
 namespace psl
 {
     template<class F, class... Args>
-    auto apply(const F& f, Args... as) -> decltype(f(as...))
+    auto apply(F f, Args... as) -> decltype(f(as...))
     {
         return f(as...);
     }
@@ -23,64 +21,44 @@ namespace psl
         return c()(as...);
     }
 
-    template<class T, class F>
-    void set(Chunk<T>& c1, const Chunk<F>& c2)
-    {
-        c1.f_ = c2.f_;
-    }
-
     template<class F>
     auto toChunk(F f) -> Chunk<decltype(f())>
     {
         return Chunk<decltype(f())>(f);
     }
 
-    auto multiply = [](auto x, auto y) { return x() * y(); };
-    auto plus = [](auto x, auto y) { return x() + y(); };
+    template<class T, class F>
+    void set(Chunk<T>& c1, const Chunk<F>& c2)
+    {
+        c1.f_ = c2.f_;
+    }
 
+    template<class T>
+    std::vector<T> toVector(const std::initializer_list<T>& v)
+    {
+        return std::vector<T>(v);
+    }
 
-    std::string toString(std::vector<Chunk<char>> cs)
+    inline std::string toString(std::vector<Chunk<char>> cs)
     {
         int size = cs.size();
         std::string s(size, ' ');
         for(int i = 0; i < size; i++)
-        {
-            auto c = cs[i];
-            s[i] = c();
-        }
+            s[i] = cs[i]();
         return s;
     }
 
-    std::vector<Chunk<char>> fromString(std::string s)
+    inline std::vector<Chunk<char>> fromString(std::string s)
     {
         int size = s.size();
         std::vector<Chunk<char>> cs(size);
         for(int i = 0; i < size; i++)
-        {
             cs[i] = toChunk([s, i]() { return s[i]; });
-        }
+
         return cs;
     }
 
-    Signal ift(Chunk<FSignal> fsignal)
-    {
-        return Signal(psl::fillFromFrequency(fsignal), fsignal().sampleRate(), fsignal().channels());
-    }
-
-    FSignal ft(Chunk<Signal> signal)
-    {
-        return FSignal(signal, 1024);
-    }
-
-    Signal fromWav(Chunk<std::vector<Chunk<char>>> file)
-    {
-        auto f = file();
-        auto string = toString(f);
-        return Signal(string);
-    }
-
-    // TODO: is this lazy?
-    std::function<Signal()> makeWriter(Chunk<std::vector<Chunk<char>>> path,
+    inline std::function<Signal()> makeWriter(Chunk<std::vector<Chunk<char>>> path,
             Chunk<Signal> signal, Chunk<std::vector<Chunk<char>>> time)
     {
         return [=]() mutable
@@ -88,11 +66,5 @@ namespace psl
             return Signal(toWavFile(signal, toString(path()), stoi(toString(time()))),
                     signal().sampleRate(), signal().channels());
         };
-    }
-
-    template<class T>
-    std::vector<T> toVector(const std::initializer_list<T>& v)
-    {
-        return std::vector<T>(v);
     }
 }
