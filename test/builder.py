@@ -38,6 +38,8 @@ class Builder(Base):
         if os.path.isfile("main.cpp"):
             cmd = "cp main.cpp " + self.cpp_file
             self.startSubprocess(cmd)
+            cmd = "cp main.cpp samples/" + self.getName(self.parsel_file) + ".cpp"
+            self.startSubprocess(cmd)
 
     def runProgram(self):
         if self.programAvailable() == True:
