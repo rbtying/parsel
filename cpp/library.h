@@ -39,7 +39,7 @@ Signal psl::ift(Chunk<FSignal> fsignal)
 
 FSignal psl::ft(Chunk<Signal> signal)
 {
-    return FSignal(signal, 1024);
+    return FSignal(signal, 5824);
 }
 
 Signal psl::loadSignal(Chunk<std::vector<Chunk<char>>> file)
