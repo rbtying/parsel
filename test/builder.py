@@ -26,7 +26,7 @@ class Builder(Base):
 
     def deleteOldBinary(self):
         self.toStringOutput("\nDeleting old binary ...\n")
-        cmd = "rm compiled_sample/bin/" + self.getName(self.parsel_file)
+        cmd = "rm bin/main"
         self.startSubprocess(cmd)
 
     def compileToCpp(self):
@@ -36,13 +36,13 @@ class Builder(Base):
 
     def renameFile(self):
         if os.path.isfile("main.cpp"):
-            cmd = "mv main.cpp " + self.cpp_file
+            cmd = "cp main.cpp " + self.cpp_file
             self.startSubprocess(cmd)
 
     def runProgram(self):
         if self.programAvailable() == True:
             self.toStringOutput("\nRunning binary ...\n")
-            cmd = "compiled_sample/bin/" + self.getName(self.parsel_file) + " "
+            cmd = "bin/main "
             for f in self.program_files:
                 cmd = cmd + f + " "
             self.startSubprocess(cmd)
@@ -50,7 +50,7 @@ class Builder(Base):
             self.toStringOutput("\nMake failed! \n")
         
     def programAvailable(self):
-        if os.path.isfile(self.getName(self.parsel_file)):
+        if os.path.isfile("bin/main"):
             return True
         else:
             return False
