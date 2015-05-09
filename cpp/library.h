@@ -14,14 +14,14 @@ namespace psl
     FSignal ft(Chunk<Signal> signal);
 
     Signal loadSignal(Chunk<std::vector<Chunk<char>>> file);
+
     Signal signal(Chunk<dubop_t> f);
 
-    dubop_t sin_ =
+    dubop_t sin =
         [](auto t)
         {
-            return sin(t());
+            return std::sin(t());
         };
-    Chunk<dubop_t> sin = toChunk([]() { return sin_; });
 
     auto plus = [](auto x, auto y) { return x + y; };
     auto minus = [](auto x, auto y) { return x - y; };

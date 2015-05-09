@@ -5,8 +5,10 @@ INC_ARGS = -Icpp/include -Icpp
 bin/main: cpp/fft4g.c obj/main.o obj/fillers.o obj/Signal.o obj/FSignal.o obj/Interval.o
 	$(COMMAND) obj/* -o bin/main $(LINK_ARGS)
 
-obj/main.o: main.cpp cpp/fillers.h cpp/fft4g.c cpp/Chunk.h cpp/utils.h
+obj/main.o: main.cpp cpp/fft4g.c cpp/includes.h
 	$(COMMAND) $(INC_ARGS) -c main.cpp -o obj/main.o
+
+cpp/includes.h: cpp/fillers.h cpp/utils.h cpp/library.h cpp/Chunk.h
 
 obj/fillers.o: cpp/fillers.cpp cpp/fillers.h cpp/Signal.h
 	$(COMMAND) $(INC_ARGS) -c cpp/fillers.cpp -o obj/fillers.o
@@ -20,7 +22,7 @@ obj/FSignal.o: cpp/FSignal.cpp cpp/FSignal.h cpp/Interval.h
 obj/Interval.o: cpp/Interval.cpp cpp/Interval.h
 	$(COMMAND) $(INC_ARGS) -c cpp/Interval.cpp -o obj/Interval.o
 
-default: bin/ma
+default: bin/main
 
 clean:
 	rm -f obj/*

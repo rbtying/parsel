@@ -27,8 +27,8 @@ findGoodMain (Def d) = isGoodMain d
                         isNotCharList (Tsym t _) = t /= cltype
                             where cltype = ListType . Type . Symbol $ "char"
 
-                        isNotSignal (Type (Symbol s)) = s == "psl::signal"
-                        isNotSignal _ = False
+                        isNotSignal (Type (Symbol s)) = s /= "psl::signal"
+                        isNotSignal _ = True
 
             isGoodMain (FuncDef _ _ _ _) = False
             isGoodMain _ = False
