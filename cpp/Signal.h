@@ -4,6 +4,7 @@
 #include <complex>
 #include <functional>
 #include <memory>
+
 #include "Chunk.h"
 
 // forward declaration
@@ -14,9 +15,9 @@ namespace psl
     typedef std::vector<std::complex<double>> sample_t;
     typedef std::vector<sample_t> buffer_t;
     typedef std::function<std::complex<double>(std::complex<double>,
-            std::complex<double>)> op_ta;
-    typedef std::function<std::complex<double>(std::complex<double>)> op_tb;
-    typedef std::function<std::complex<double>(double)> op_tc;
+            std::complex<double>)> binop_t;
+    typedef std::function<std::complex<double>(std::complex<double>)> unop_t;
+    typedef std::function<std::complex<double>(Chunk<double>)> dubop_t;
 
 
     typedef unsigned long utime_t;
@@ -37,16 +38,15 @@ namespace psl
         int sampleRate() const;
         int channels() const;
 
-        Signal add(Signal* s);
+        friend Signal operator+(Chunk<Signal> s1, Chunk<Signal> s2);
+        friend Signal operator-(Chunk<Signal> s1, Chunk<Signal> s2);
+        friend Signal operator*(Chunk<Signal> s1, Chunk<Signal> s2);
+        friend Signal operator/(Chunk<Signal> s1, Chunk<Signal> s2);
+
+        // how to implement these with operator+ for complex as well
         Signal add(double s);
-
-        Signal sub(Signal* s);
         Signal sub(double s);
-
-        Signal mul(Signal* s);
         Signal mul(double s);
-
-        Signal div(Signal* s);
         Signal div(double s);
 
         Signal shift(utime_t delay);
@@ -60,5 +60,13 @@ namespace psl
         std::shared_ptr<bool> cacheB_, firstRun_, more_;
         int sampleRate_, channels_;
 
+        Chunk<Signal> chunk();
+
     };
+    
+    Signal operator+(Chunk<Signal> s1, Chunk<Signal> s2);
+    Signal operator-(Chunk<Signal> s1, Chunk<Signal> s2);
+    Signal operator*(Chunk<Signal> s1, Chunk<Signal> s2);
+    Signal operator/(Chunk<Signal> s1, Chunk<Signal> s2);
 }
+
