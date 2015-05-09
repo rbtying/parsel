@@ -1,3 +1,3 @@
 main(f1[char]) -> (signal) =
-    let float f = if length(f1) > 5 then 3300 else 10000
-    in [signal with \(float t) -> complex = sin(t * f)]
+    let f() -> float = if length(f1) > 5 then 3300 else 10000
+    in [signal with \(float t) -> complex = sin(t * f())]

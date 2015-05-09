@@ -100,6 +100,7 @@ ApplyFunc : Expr '(' Exprs ')'                      { Func $1 $3 }
                                                       in Func var [$1, $5] }
 
 Lambda : '\\' '(' Tsyms ')' '->' Type '=' Expr      { Lambda $3 $6 $8 }
+       | '\\' '(' ')' '->' Type '=' Expr            { Lambda [] $5 $7 }
 
 Tsyms : Tsym                                        { [$1] }
       | Tsyms ',' Tsym                              { $3 : $1 }
