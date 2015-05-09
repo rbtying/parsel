@@ -1,4 +1,4 @@
-COMMAND = mkdir -p bin; mkdir -p obj; g++-4.9 -g -std=c++14
+COMMAND = mkdir -p bin; mkdir -p obj; g++-5 -g -std=c++14
 LINK_ARGS = -Lcpp/lib -lsndfile
 INC_ARGS = -Icpp/include -Icpp
 

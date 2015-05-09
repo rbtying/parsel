@@ -3,7 +3,6 @@
 #include "utils.h"
 
 #include <sndfile.hh>
-#include <memory>
 #include <iostream>
 
 // TODO: do this better
@@ -12,7 +11,7 @@
 using namespace psl;
 
 Signal::Signal(std::string filepath) :
-    Signal(*std::auto_ptr<SndfileHandle>(new SndfileHandle(filepath)))
+    Signal(*std::shared_ptr<SndfileHandle>(new SndfileHandle(filepath)))
 { }
 
 Signal::Signal(SndfileHandle& file) :

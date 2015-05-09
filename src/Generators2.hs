@@ -41,7 +41,14 @@ genExpr (Var (Symbol sym) _)
     | sym == "toSignal"     = "psl::toSignal"
     | otherwise     = sym
 
-genExpr (Lambda tsyms _ expr) = toChunk $ genLambda tsyms expr
+genExpr (Lambda tsyms t expr) = toChunk $ func ++ "(" ++ lambda ++ ")"
+    where   func = "std::function<" ++ genRawType t ++ "(" ++ ts ++ ")>"
+            ts = intercalate ", " $ map (genType . \(Tsym t' _) -> t') tsyms
+
+            lambda = "[=](" ++ args ++ ") mutable {\n " ++ body ++ "\n}"
+            args = intercalate ", " $ map genTsym tsyms
+            body = genReturn expr
+
 
 genExpr (LetExp ds expr) = "[=]() mutable {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
     where   (decs, defs) = genDefs ds
@@ -55,11 +62,6 @@ genExpr (Cond expr1 expr2 expr3) = "[=]() mutable {\n" ++ cond ++ "\n}"
             e2 = genReturn expr2
             e3 = genReturn expr3
 
-
-genLambda :: Tsyms -> Expr -> [Char]
-genLambda tsyms expr = "[=](" ++ args ++ ") mutable {\n " ++ body ++ "\n}"
-    where   args = intercalate ", " $ map genTsym tsyms
-            body = genReturn expr
 
 genReturn :: Expr -> [Char]
 genReturn expr = "return " ++ genRawExpr expr ++ ";"

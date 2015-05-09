@@ -1,4 +1,2 @@
 main(f1[char]) -> (signal) =
-    let mysig(float t) -> complex = sin(t * f)
-        float f = 3300
-    in [signal(mysig)]
+    [signal with \(float t) -> complex = sin(t * 3300)]
