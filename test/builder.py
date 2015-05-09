@@ -11,10 +11,12 @@ class Builder(Base):
             self.build()
             self.deleteOldBinary()
             self.compileToCpp()
+            self.renameFile()
             self.runProgram()
         elif options == 2:
             self.deleteOldBinary()
             self.compileToCpp()
+            self.renameFile()
             self.runProgram()
 
     def build(self):
@@ -31,6 +33,11 @@ class Builder(Base):
         self.toStringOutput("\nCompiling parsel file to C++ ... \n") 
         cmd = "dist/build/parsel/parsel " + self.parsel_file
         self.startSubprocess(cmd)
+
+    def renameFile(self):
+        if os.path.isfile("main.cpp"):
+            cmd = "mv main.cpp " + self.cpp_file
+            self.startSubprocess(cmd)
 
     def runProgram(self):
         if self.programAvailable() == True:
