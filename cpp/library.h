@@ -6,6 +6,8 @@
 #include "Chunk.h"
 
 #include <cmath>
+#include <algorithm>
+#include <functional>
 
 namespace psl
 {
@@ -54,3 +56,27 @@ Signal psl::signal(Chunk<dubop_t> f)
     int channels = 2;
     return Signal(fillFromFunction(f, sampleRate, channels), sampleRate, channels);
 }
+   
+
+struct mapArray {
+    template<class V, class F>
+    auto operator()(Chunk<std::vector<V>> v, F f) -> std::function<Chunk<std::vector<decltype(f(std::declval<V>()))>>> {
+        return [&]{
+            std::vector<decltype(f(std::declval<V>()))> ret(v().size());
+            std::transform(v().begin(), v().end(), ret.begin(), f);
+            return ret;
+        };
+    }
+};
+#define mapArray mapArray()
+/*
+   template<class V, class T>
+   Chunk<std::vector<T>> map(Chunk<std::vector<V>> v, Chunk<std::function<T(V)>> c)
+   {
+   return toChunk([&]{
+   std::vector<T> ret(v().size());
+   std::transform(v().begin(), v().end(), ret.begin(), c());
+   return ret;
+   });
+   }
+   */
