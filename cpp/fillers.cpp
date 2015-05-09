@@ -64,26 +64,26 @@ fill_t psl::fillFromFunction(Chunk<dubop_t> f, int sampleRate, int channels)
     return [s, sampleRate, channels, f] (buffer_t* bufferP, bool B) mutable
     {
         int startS = *s;
-    	int stopPos = *s + bufferP->size();
+        int stopPos = *s + bufferP->size();
 
-    	for (; *s < stopPos; (*s)++)
-    	{
+        for (; *s < stopPos; (*s)++)
+        {
             int sample = *s;
             Chunk<double> time = toChunk([sample, sampleRate]()
                     { return (double)sample / sampleRate; });
             std::complex<double> val = f()(time);
 
-    	    (*bufferP)[sample - startS] = std::vector<std::complex<double>>(channels, val);
-    	}
+            (*bufferP)[sample - startS] = std::vector<std::complex<double>>(channels, val);
+        }
 
-    	return bufferP->size() + *s < 0;
+        return *s >= stopPos;
     };
 }
 
 fill_t psl::fillFromFile(SndfileHandle& file)
 {
     std::shared_ptr<std::vector<short>> fileDataP(
-    	    new std::vector<short>(file.channels() * file.frames()));
+            new std::vector<short>(file.channels() * file.frames()));
     file.read(fileDataP->data(), fileDataP->size());
 
     std::shared_ptr<int> frameP(new int(0));
@@ -91,19 +91,19 @@ fill_t psl::fillFromFile(SndfileHandle& file)
 
     return [channels, fileDataP, frameP](buffer_t* bufferP, bool) mutable
     {
-    	int stopPos = std::min(bufferP->size(), fileDataP->size() / channels - *frameP);
-    	for (int f = 0; f < stopPos; f++)
-    	{
-    	    (*bufferP)[f] = std::vector<std::complex<double>>(channels);
-    	    for(int c = 0; c < channels; c++)
-    	    	(*bufferP)[f][c] = (double)fileDataP->at(((*frameP + f) * channels) + c) /
+        int stopPos = std::min(bufferP->size(), fileDataP->size() / channels - *frameP);
+        for (int f = 0; f < stopPos; f++)
+        {
+            (*bufferP)[f] = std::vector<std::complex<double>>(channels);
+            for(int c = 0; c < channels; c++)
+                (*bufferP)[f][c] = (double)fileDataP->at(((*frameP + f) * channels) + c) /
                         SHRT_MAX;
-    	}
+        }
         *frameP += stopPos;
-    	for(int i = stopPos; i < bufferP->size(); i++)
-    	    (*bufferP)[i] = std::vector<std::complex<double>>(channels, 0);
+        for(int i = stopPos; i < bufferP->size(); i++)
+            (*bufferP)[i] = std::vector<std::complex<double>>(channels, 0);
 
-    	return stopPos == bufferP->size();
+        return stopPos == bufferP->size();
     };
 }
 
@@ -144,13 +144,13 @@ fill_t psl::fillFromOperator(unop_t f, Chunk<Signal> signal)
 
         int stopPos = signal().buffer_->size();
         int channels = signal().channels();
-	    for (int s = 0; s < stopPos; s++)
-	    {
+        for (int s = 0; s < stopPos; s++)
+        {
             (*bufferP)[s] = std::vector<std::complex<double>>(channels);
             for (int c = 0; c < channels; c++)
                 (*bufferP)[s][c] = f((*(signal().buffer_))[s][c]);
-	    }
-	    return l_ok;
+        }
+        return l_ok;
     };
 }
 
@@ -165,7 +165,7 @@ fill_t psl::fillFromPhaseShift(utime_t delay, Chunk<Signal> signal)
 
         bool success = signal().fillBuffer(B);
 
-	    if (delay >= 0)
+        if (delay >= 0)
         {
             for(int s = 0; s < startPos; s++)
                 (*bufferP)[s] = std::vector<std::complex<double>>(channels, 0);
@@ -175,7 +175,7 @@ fill_t psl::fillFromPhaseShift(utime_t delay, Chunk<Signal> signal)
                 for (int c = 0; c < channels; c++)
                     (*bufferP)[s][c] = (*(signal().buffer_))[s][c];
             }
-	    }
+        }
         else
             for (int s = 0; s < stopPos-startPos; s++)
             {
@@ -183,7 +183,7 @@ fill_t psl::fillFromPhaseShift(utime_t delay, Chunk<Signal> signal)
                 for (int c = 0; c < channels; c++)
                     (*bufferP)[s][c] = (*(signal().buffer_))[s+startPos][c];
             }
-	    return success;
+        return success;
     };
 }
 
