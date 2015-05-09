@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <string>
+#include <algorithm>
 
 namespace psl
 {
@@ -66,5 +67,19 @@ namespace psl
             return Signal(std::bind(toWavFile, signal, toString(path()), stoi(toString(time()))),
                     signal().sampleRate(), signal().channels());
         };
+    }
+
+    template<class V, class F>
+    auto mapArray(Chunk<std::vector<V>> v, F f) -> std::vector<decltype(f(std::declval<V>()))> {
+        std::vector<decltype(f(std::declval<V>()))> ret(v().size());
+        std::transform(v().begin(), v().end(), ret.begin(), f);
+        return ret;
+    }
+
+    template<class V, class T>
+    std::vector<T> mapArray(Chunk<std::vector<V>> v, Chunk<std::function<T(V)>> c) {
+        std::vector<T> ret(v().size());
+        std::transform(v().begin(), v().end(), ret.begin(), c());
+        return ret;
     }
 }
