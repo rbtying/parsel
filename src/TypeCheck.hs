@@ -19,7 +19,6 @@ data Error  = WrongType Type Type
 type VarScope = Map.Map Int ScopeTree
 data ScopeTree  = Empty
                 | Node  { treeScope :: SymbolTable
-                        , treeChildren :: [ScopeTree]
                         , treeParent :: ScopeTree
                         }
 type SymbolTable = Map.Map Symbol Type
@@ -144,7 +143,7 @@ toEither s Nothing = Left s
 searchForSym :: VarScope -> Symbol -> Int -> Maybe Type
 searchForSym vs sym i = Map.lookup i vs >>= searchUp
     where   searchUp Empty = Nothing
-            searchUp (Node scope _ parent) =
+            searchUp (Node scope parent) =
                 let maybeData = Map.lookup sym scope
                     keepSearching (Just t) = Just t
                     keepSearching Nothing = searchUp parent

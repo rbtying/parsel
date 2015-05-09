@@ -22,9 +22,9 @@ handleArgs (infile:[]) = do
     let tokens = AlexToken.scanTokens input
         parse = HappyParser.parse tokens
         (newparse, errors) = runWriter $ semAnalysis parse
-    if True --(null errors)
+    if null errors
         then do
-            writeFile "main.cpp" $ generateCode parse --newparse
+            writeFile "main.cpp" $ generateCode newparse
             process <- runCommand "make"
             _ <- waitForProcess process
             return ()

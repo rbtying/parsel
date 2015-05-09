@@ -5,9 +5,16 @@ import AST
 import qualified Data.Map as Map
 import TypeCheck
 
-builtInScope :: VarScope
-builtInScope = Map.fromList [(0, Node builtInSymbolTable [] Empty)]
-    where   builtInSymbolTable = Map.fromList [] :: SymbolTable
+--TODO: finish this!
+builtInScope :: SymbolTable
+builtInScope = Map.fromList table
+    where   table = [ (Symbol "sin", FuncType [f] f)
+                    , (Symbol "cos", FuncType [f] f)
+                    , (Symbol "ft", FuncType [s] fs)
+                    ]
+            f = Type . Symbol $ "float"
+            s = Type . Symbol $ "signal"
+            fs = Type . Symbol $ "fsignal"
 
 builtInStructData :: StructData
 builtInStructData = Map.fromList [

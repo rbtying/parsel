@@ -35,7 +35,30 @@ findGoodMain (Def d) = isGoodMain d
 findGoodMain (Struct _ _) = False
 
 defCheck :: AST -> Writer [Error] (VarScope, StructData, AST)
-defCheck ast = return (Map.empty, getStructs ast, ast)
+defCheck ast = return (getScopes ast, getStructs ast, ast)
+
+getScopes :: AST -> VarScope
+getScopes ast = Map.unions $ map (getTopDefScope topScope) ast
+    where   topScope = Node builtInScope Empty
+
+getTopDefScope :: ScopeTree -> TopDef -> VarScope
+getTopDefScope parent (Def (FuncDef sym tsyms rt expr))
+    = getExprScope scope expr
+    where   scope = Node (Map.insert sym t $ toScopeTable tsyms) parent
+            t = FuncType (map (\(Tsym t' _) -> t') tsyms) rt
+getTopDefScope _ _ = Map.empty
+
+getDefScope :: ScopeTree -> Def -> VarScope
+
+
+getExprScope :: ScopeTree -> Expr -> VarScope
+getExprScope scope (Var _ ind) = Map.singleton ind scope
+getExprScope _ _ = Map.empty
+
+
+toScopeTable :: [Tsym] -> SymbolTable
+toScopeTable = Map.fromList . map (\(Tsym t s) -> (s, t))
+
 
 getStructs :: AST -> StructData
 getStructs ast = Map.fromList (map getStruct [1..numberStructs])

@@ -37,9 +37,12 @@ genExpr (Var (Symbol sym) _)
     | sym == "sin"          = "psl::sin"
     | sym == "cos"          = "psl::cos"
     | sym == "ft"           = "psl::ft"
+    | sym == "ift"          = "psl::ift"
     | sym == "intervalMap"  = "psl::intervalMap"
     | sym == "toSignal"     = "psl::toSignal"
     | sym == "length"       = "psl::length"
+    | sym == "signal"       = "psl::signal"
+    | sym == "loadSignal"   = "psl::loadSignal"
     | otherwise     = sym
 
 genExpr (Lambda tsyms t expr) = toChunk $ func ++ "(" ++ lambda ++ ")"
