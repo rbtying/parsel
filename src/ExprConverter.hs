@@ -14,8 +14,8 @@ binOpToFunc binOp e1 e2 = Func funcBod [e1, e2]
             opToString LessThanEq       = "psl::lessThanEq"
             opToString GreaterThanEq    = "psl::greaterThanEq"
             opToString Eq               = "psl::eq"
-            opToString And              = "psl::and"
-            opToString Or               = "psl::or"
+            opToString And              = "psl::and_"
+            opToString Or               = "psl::or_"
 
 unOpToFunc :: UnOp -> Expr -> Expr
 unOpToFunc unOp e1 = Func funcBod [e1]

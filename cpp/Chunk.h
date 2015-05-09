@@ -33,6 +33,30 @@ namespace psl
 
     template<class T, class F>
     T operator/(Chunk<T> t1, Chunk<F> t2);
+
+    template<class T, class F>
+    T operator>=(Chunk<T> t1, Chunk<F> t2);
+
+    template<class T, class F>
+    T operator<=(Chunk<T> t1, Chunk<F> t2);
+
+    template<class T, class F>
+    T operator>(Chunk<T> t1, Chunk<F> t2);
+
+    template<class T, class F>
+    T operator<(Chunk<T> t1, Chunk<F> t2);
+
+    template<class T, class F>
+    T operator==(Chunk<T> t1, Chunk<F> t2);
+
+    template<class T, class F>
+    T operator&&(Chunk<T> t1, Chunk<F> t2);
+
+    template<class T, class F>
+    T operator||(Chunk<T> t1, Chunk<F> t2);
+
+    template<class T, class F>
+    T operator!(Chunk<T> t1);
 }
 
 using namespace psl;
@@ -80,4 +104,52 @@ template<class T, class F>
 T psl::operator/(Chunk<T> t1, Chunk<F> t2)
 {
     return t1() / t2();
+}
+
+template<class T, class F>
+T psl::operator>=(Chunk<T> t1, Chunk<F> t2)
+{
+    return t1() >= t2();
+}
+
+template<class T, class F>
+T psl::operator<=(Chunk<T> t1, Chunk<F> t2)
+{
+    return t1() <= t2();
+}
+
+template<class T, class F>
+T psl::operator>(Chunk<T> t1, Chunk<F> t2)
+{
+    return t1() > t2();
+}
+
+template<class T, class F>
+T psl::operator<(Chunk<T> t1, Chunk<F> t2)
+{
+    return t1() < t2();
+}
+
+template<class T, class F>
+T psl::operator==(Chunk<T> t1, Chunk<F> t2)
+{
+    return t1() == t2();
+}
+
+template<class T, class F>
+T psl::operator&&(Chunk<T> t1, Chunk<F> t2)
+{
+    return t1() && t2();
+}
+
+template<class T, class F>
+T psl::operator||(Chunk<T> t1, Chunk<F> t2)
+{
+    return t1() || t2();
+}
+
+template<class T, class F>
+T psl::operator!(Chunk<T> t1)
+{
+    return !t1();
 }

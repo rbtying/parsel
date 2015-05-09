@@ -39,6 +39,7 @@ genExpr (Var (Symbol sym) _)
     | sym == "ft"           = "psl::ft"
     | sym == "intervalMap"  = "psl::intervalMap"
     | sym == "toSignal"     = "psl::toSignal"
+    | sym == "length"       = "psl::length"
     | otherwise     = sym
 
 genExpr (Lambda tsyms t expr) = toChunk $ func ++ "(" ++ lambda ++ ")"
@@ -56,7 +57,7 @@ genExpr (LetExp ds expr) = "[=]() mutable {" ++ n:decs ++ n:defs ++ n:out ++ n:"
             n = '\n'
 
 -- TODO: is this lazy?
-genExpr (Cond expr1 expr2 expr3) = "[=]() mutable {\n" ++ cond ++ "\n}"
+genExpr (Cond expr1 expr2 expr3) = toChunk $ "[=]() mutable {\n" ++ cond ++ "\n}()"
     where   cond = "if(" ++ e1 ++ ") {\n" ++ e2 ++ "\n}\nelse {\n" ++ e3 ++ "\n};"
             e1 = genRawExpr expr1
             e2 = genReturn expr2
