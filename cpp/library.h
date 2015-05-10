@@ -82,6 +82,28 @@ namespace psl
 
         return ret;
     };
+
+    auto fold = [](auto &v, auto f)
+    {
+        int size = v().size();
+
+        auto ret = v().at(0)();
+        for (int i = 1; i < size; i++)
+            ret = f()(toChunk([=] { return ret; }), v().at(i));
+
+        return ret;
+    };
+
+    auto foldl = [](auto &v, auto f, auto initValue)
+    {
+        int size = v().size();
+
+        auto ret = initValue;
+        for (int i = 1; i < size; i++)
+            ret = f(ret, v().at(i));
+
+        return ret;
+    };
 }
 
 Signal psl::ift(Chunk<FSignal> fsignal)
