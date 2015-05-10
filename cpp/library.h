@@ -15,7 +15,7 @@ namespace psl
     std::function<FSignal(Chunk<Signal>)>(
         [](auto signal)
         {
-            return FSignal(signal, 5824);
+            return FSignal(signal, 50 * 10e3);
         });
     });
 
@@ -48,6 +48,51 @@ namespace psl
         });
     });
 
+    FSignal freqShift(Chunk<FSignal> fsig, Chunk<dubop_t> f) {
+        freq_fill_t fs = [=](fbuffer_t* buf, double t, bool B) mutable -> bool {
+            bool succ = fsig().fillBuffer(B);
+
+            buf->clear();
+            buf->resize(fsig().freqSpace_->size());
+
+            Chunk<double> tc = psl::toChunk([=](){ return t; });
+            double val = f()(tc).real();
+
+            // f(t) in Hz, t in seconds
+            // bin size = sampleRate / numBins
+            int shift = val * fsig().freqSpace_->size() / fsig().sampleRate();
+
+            if (shift > 0) {
+                // shift right
+                for (int i = 0; i < fsig().freqSpace_->size(); ++i) {
+                    for (int channel = 0; channel < fsig().channels(); ++channel) {
+                        if (i < shift) {
+                            (*buf)[i].push_back(std::complex<double>(0,0));
+                        } else {
+                            (*buf)[i].push_back((*fsig().freqSpace_)[i - shift][channel]);
+                        }
+                    }
+                }
+            } else if (shift < 0) {
+                // shift left
+                int rshift = fsig().freqSpace_->size() + shift; // shift from the right side
+                for (int i = fsig().freqSpace_->size() - 1; i >= 0; --i) {
+                    for (int channel = 0; channel < fsig().channels(); ++channel) {
+                        if (i > rshift) {
+                            (*buf)[i].push_back(std::complex<double>(0,0));
+                        } else {
+                            (*buf)[i].push_back((*fsig().freqSpace_)[i - shift][channel]);
+                        }
+                    }
+                }
+            } else {
+                buf->assign(fsig().freqSpace_->begin(), fsig().freqSpace_->end());
+            }
+            return succ;
+        };
+        return FSignal(fs, fsig().sampleRate(), fsig().channels());
+    }
+
     auto sin = toChunk([] () { return
     dubop_t(
         [](auto t)
@@ -75,7 +120,7 @@ namespace psl
     auto fromComplex = [](auto x) { return std::real(x()); };
 
     // TODO: not lazy!
-    auto map = [](auto &v, auto f) 
+    auto map = [](auto &v, auto f)
     {
         int size = v().size();
         std::vector<Chunk<decltype(f()(v().at(std::declval<int>())))>> ret(size);
@@ -91,7 +136,7 @@ namespace psl
         int size = v().size();
 
         // TODO: Handle the case when list is empty
-        
+
         auto ret = v().at(0)();
         for (int i = 1; i < size; i++)
             ret = f()(toChunk([=] { return ret; }), v().at(i));

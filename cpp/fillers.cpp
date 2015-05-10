@@ -115,8 +115,6 @@ fill_t psl::fillFromOperator(binop_t f, Chunk<Signal> lhs, Chunk<Signal> rhs)
 
     return [lhs, rhs, f](buffer_t* bufferP, bool B) mutable
     {
-        std::ofstream myfile;
-        myfile.open("temp.txt");
         bool l_ok = lhs().fillBuffer(B);
         bool r_ok = rhs().fillBuffer(B);
 
@@ -130,7 +128,6 @@ fill_t psl::fillFromOperator(binop_t f, Chunk<Signal> lhs, Chunk<Signal> rhs)
                 (*bufferP)[s][c] = f((*(lhs().buffer_))[s][c],
                         (*(rhs().buffer_))[s][c]);
         }
-        myfile.close();
 
         return l_ok && r_ok;
     };
