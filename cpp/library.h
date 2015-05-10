@@ -15,7 +15,7 @@ namespace psl
     std::function<FSignal(Chunk<Signal>)>(
         [](auto signal)
         {
-            return FSignal(signal, 5824);
+            return FSignal(signal, 50 * 10e3);
         });
     });
 
@@ -72,7 +72,7 @@ namespace psl
     auto negate = [](auto x) { return !x; };
 
     // TODO: not lazy!
-    auto map = [](auto &v, auto f) 
+    auto map = [](auto &v, auto f)
     {
         int size = v().size();
         std::vector<Chunk<decltype(f()(v().at(std::declval<int>())))>> ret(size);
@@ -88,7 +88,7 @@ namespace psl
         int size = v().size();
 
         // TODO: Handle the case when list is empty
-        
+
         auto ret = v().at(0)();
         for (int i = 1; i < size; i++)
             ret = f()(toChunk([=] { return ret; }), v().at(i));

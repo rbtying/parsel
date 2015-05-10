@@ -20,7 +20,6 @@ namespace psl
         channels_(sig().channels()),
         B_(false)
     {
-        std::cout << "initialized interval" << std::endl;
         startTime_ = -length_;
         advance();
     }
