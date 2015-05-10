@@ -1,2 +1,3 @@
 main(input[char], otherinput[char]) -> (signal, signal) =
-    mapArray(loadSignal, [input, otherinput])
+#    let myload(thing[char]) -> signal = loadSignal(thing)
+    map(loadSignal, [input, otherinput])
