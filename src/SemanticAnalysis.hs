@@ -42,13 +42,15 @@ getScopes ast = Map.unions $ map (getTopDefScope topScope) ast
     where   topScope = Node builtInScope Empty
 
 getTopDefScope :: ScopeTree -> TopDef -> VarScope
-getTopDefScope parent (Def (FuncDef sym tsyms rt expr))
-    = getExprScope scope expr
-    where   scope = Node (Map.insert sym t $ toScopeTable tsyms) parent
-            t = FuncType (map (\(Tsym t' _) -> t') tsyms) rt
+getTopDefScope parent (Def def) = getDefScope parent def 
 getTopDefScope _ _ = Map.empty
 
 getDefScope :: ScopeTree -> Def -> VarScope
+getDefScope parent (FuncDef sym tsyms rt expr) 
+    = getExprScope scope expr
+    where   scope = Node (Map.insert sym t $ toScopeTable tsyms) parent
+            t = FuncType (map (\(Tsym t' _) -> t') tsyms) rt
+getDefScope parent (VarDef tsym expr) = getExprScope parent expr
 
 
 getExprScope :: ScopeTree -> Expr -> VarScope
