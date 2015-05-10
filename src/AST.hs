@@ -57,12 +57,20 @@ data Type       = Type Symbol
                 | TupleType [Type]
                 | FuncType [Type] Type
                 deriving (Show, Eq)
+
 instance Ord Type where
-    (Type sym1) `compare` (Type sym2) =
-        sym1 `compare` sym2
-    (ListType t1) `compare` (ListType t2) =
-        t1 `compare` t2
-    (TupleType ts1) `compare` (TupleType ts2) =
-        ts1 `compare` ts2
-    (FuncType ts1 t1) `compare` (FuncType ts2 t2) =
-        (t1:ts1) `compare` (t2:ts2)
+    (Type sym1) <= (Type sym2) =
+        sym1 <= sym2
+    (Type _) <= _ = True
+
+    (ListType t1) <= (ListType t2) =
+        t1 <= t2
+    (ListType _) <= _ = True
+
+    (TupleType ts1) <= (TupleType ts2) =
+        ts1 <= ts2
+    (TupleType _) <= _ = True
+
+    (FuncType ts1 t1) <= (FuncType ts2 t2) =
+        (t1:ts1) <= (t2:ts2)
+    (FuncType _ _) <= _ = True

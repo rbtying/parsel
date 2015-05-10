@@ -41,7 +41,6 @@ genDefs (def:defs) = (topdef ++ topdefs, code ++ codes)
 genDef :: Def -> ([Char], [Char], [Char])
 genDef (FuncDef (Symbol sym) tsyms rt expr)
     | sym == "main" = 
-        -- Rewrite with Chunk<vector<Chunk<char>>>
         let mainloop = "psl::Chunk<std::vector<psl::Chunk<char>>> args[argc];\n"
                 ++ "for (int i = 0; i < argc; i++) {\n"
                 ++ "std::vector<psl::Chunk<char>> chk(strlen(argv[i])+1);\n"

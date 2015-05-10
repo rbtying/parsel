@@ -62,14 +62,17 @@ namespace psl
     auto minus = [](auto x, auto y) { return x - y; };
     auto multiply = [](auto x, auto y) { return x * y; };
     auto divide = [](auto x, auto y) { return x / y; };
-    auto lessThan = [](auto x, auto y) { return x < y; };
-    auto greaterThan = [](auto x, auto y) { return x > y; };
-    auto lessThanEq = [](auto x, auto y) { return x <= y; };
-    auto greaterThanEq = [](auto x, auto y) { return x >= y; };
+    auto lessThan = [](auto x, auto y) { return x > y; };
+    auto greaterThan = [](auto x, auto y) { return x < y; };
+    auto lessThanEq = [](auto x, auto y) { return x >= y; };
+    auto greaterThanEq = [](auto x, auto y) { return x <= y; };
     auto eq = [](auto x, auto y) { return x == y; };
     auto and_ = [](auto x, auto y) { return x && y; };
     auto or_ = [](auto x, auto y) { return x || y; };
     auto negate = [](auto x) { return !x; };
+
+    auto toComplex = [](auto x) { return std::complex<double>((double)x()); };
+    auto fromComplex = [](auto x) { return std::real(x()); };
 
     // TODO: not lazy!
     auto map = [](auto &v, auto f) 

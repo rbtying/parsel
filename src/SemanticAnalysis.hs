@@ -5,37 +5,40 @@ import TypeCheck
 import GlobalScope
 
 import Control.Monad.Writer
-
+import Data.Maybe
 import qualified Data.Map as Map
 
 
 semAnalysis :: AST -> Writer [Error] AST
-semAnalysis ast = defCheck ast >>= typeCheck >>= mainCheck
+semAnalysis ast = defCheck (ast, getStructs ast) >>= mainCheck
 
 mainCheck :: AST -> Writer [Error] AST
 mainCheck ast
-    | (length (filter findGoodMain ast)) == 1 = return ast
+    | any isJust mains = return ast'
     | otherwise = writer (ast, [NoMain])
+    where   mains = map toGoodMain ast
+            ast' = map fromM $ zip mains ast
+            
+            fromM (Just td', td) = td'
+            fromM (Nothing, td) = td
 
-findGoodMain :: TopDef -> Bool
-findGoodMain (Def d) = isGoodMain d 
-    where   isGoodMain (FuncDef (Symbol sym) tsyms (TupleType ts) _) =
-                goodArgs && goodts && length ts > 0 && sym == "main"
-                where   goodArgs = length (filter isNotCharList tsyms) == 0
-                        goodts = length (filter isNotSignal ts) == 0
 
-                        isNotCharList (Tsym t _) = t /= cltype
-                            where cltype = ListType . Type . Symbol $ "char"
+toGoodMain :: TopDef -> Maybe TopDef
+toGoodMain (Def (FuncDef (Symbol sym) tsyms (TupleType ts) expr))
+    | isGoodMain = Just $ Def (FuncDef (Symbol sym) tsyms (TupleType ts) expr')
+    | otherwise = Nothing
+    where   expr' = List exprs
+            Tuple exprs = expr
+            
+            isGoodMain  = goodArgs && goodts && length ts > 0 && sym == "main"
+            goodArgs = all isCharList tsyms
+            goodts = all isSignal ts
 
-                        isNotSignal (Type (Symbol s)) = s /= "psl::signal"
-                        isNotSignal _ = True
-
-            isGoodMain (FuncDef _ _ _ _) = False
-            isGoodMain _ = False
-findGoodMain (Struct _ _) = False
-
-defCheck :: AST -> Writer [Error] (VarScope, StructData, AST)
-defCheck ast = return (Map.empty, getStructs ast, ast)
+            isCharList (Tsym t _) = t == cltype
+                where cltype = ListType . Type . Symbol $ "char"
+            isSignal t = t == sigtype
+                where sigtype = Type . Symbol $ "signal"
+toGoodMain _ = Nothing
 
 getStructs :: AST -> StructData
 getStructs ast = Map.fromList (map getStruct [1..numberStructs])
