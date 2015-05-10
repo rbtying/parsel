@@ -15,12 +15,13 @@ Signal::Signal(std::string filepath) :
 { }
 
 Signal::Signal(SndfileHandle& file) :
-    Signal(psl::fillFromFile(file), file.samplerate(), file.channels())
+    Signal(std::bind(psl::fillFromFile, file), file.samplerate(), file.channels())
 { }
 
-Signal::Signal(fill_t fill, int sampleRate, int channels) :
+Signal::Signal(std::function<fill_t()> fill_generator, int sampleRate, int channels) :
     buffer_(new buffer_t(sampleRate * BUFFER_SECS, sample_t(channels, 0))),
-    fill_(fill),
+    fill_gen_(fill_generator),
+    fill_(fill_generator()),
     cacheB_(new bool(false)),
     firstRun_(new bool(true)),
     more_(new bool(true)),
@@ -30,6 +31,7 @@ Signal::Signal(fill_t fill, int sampleRate, int channels) :
 
 Signal::Signal(const Signal& other) :
     buffer_(other.buffer_),
+    fill_gen_(other.fill_gen_),
     fill_(other.fill_),
     cacheB_(other.cacheB_),
     firstRun_(other.firstRun_),
@@ -42,6 +44,7 @@ Signal& Signal::operator=(const Signal& other)
 {
     buffer_ = other.buffer_;
     fill_ = other.fill_;
+    fill_gen_ = other.fill_gen_;
     cacheB_ = other.cacheB_;
     firstRun_ = other.firstRun_;
     more_ = other.more_;
@@ -75,32 +78,37 @@ Signal psl::operator+(Chunk<Signal> s1, Chunk<Signal> s2)
 {
     binop_t f = [](std::complex<double> a, std::complex<double> b)
             { return a + b; };
-    return Signal(fillFromOperator(f, s1, s2), s1().sampleRate(),
-            s1().channels());
+
+    std::function<fill_t()> fn = [=]()->fill_t { return fillFromOperator(f, s1, s2); };
+    return Signal(fn, s1().sampleRate(), s1().channels());
 }
 
 Signal psl::operator-(Chunk<Signal> s1, Chunk<Signal> s2)
 {
     binop_t f = [](std::complex<double> a, std::complex<double> b)
             { return a - b; };
-    return Signal(fillFromOperator(f, s1, s2), s1().sampleRate(),
-            s1().channels());
+    std::function<fill_t()> fn = [=]()->fill_t { return fillFromOperator(f, s1, s2); };
+    return Signal(fn, s1().sampleRate(), s1().channels());
 }
 
 Signal psl::operator*(Chunk<Signal> s1, Chunk<Signal> s2)
 {
     binop_t f = [](std::complex<double> a, std::complex<double> b)
             { return a * b; };
-    return Signal(fillFromOperator(f, s1, s2), s1().sampleRate(),
-            s1().channels());
+
+    std::function<fill_t()> fn = [=]()->fill_t { return fillFromOperator(f, s1, s2); };
+
+    return Signal(fn, s1().sampleRate(), s1().channels());
 }
 
 Signal psl::operator/(Chunk<Signal> s1, Chunk<Signal> s2)
 {
     binop_t f = [](std::complex<double> a, std::complex<double> b)
             { return a / b; };
-    return Signal(fillFromOperator(f, s1, s2), s1().sampleRate(),
-            s1().channels());
+
+    std::function<fill_t()> fn = [=]()->fill_t { return fillFromOperator(f, s1, s2); };
+
+    return Signal(fn, s1().sampleRate(), s1().channels());
 }
 
 
@@ -108,7 +116,9 @@ Signal Signal::add(double s)
 {
     unop_t f = [s](std::complex<double> l) {return l + std::complex<double>(s);};
 
-    return Signal(fillFromOperator(f, chunk()), sampleRate_, channels_);
+    std::function<fill_t()> fn = [=]()->fill_t{ return fillFromOperator(f, chunk()); };
+
+    return Signal(fn, sampleRate_, channels_);
 
 }
 
@@ -116,18 +126,19 @@ Signal Signal::sub(double s)
 {
     unop_t f = [s](std::complex<double> l) {return l - std::complex<double>(s);};
 
-    return Signal(fillFromOperator(f, chunk()), sampleRate_, channels_);
+    std::function<fill_t()> fn = [=]()->fill_t{ return fillFromOperator(f, chunk()); };
+
+    return Signal(fn, sampleRate_, channels_);
 
 }
 
 Signal Signal::mul(double s)
 {
-    unop_t f = [s](std::complex<double> l)
-    {
-    	return l * std::complex<double>(s);
-    };
+    unop_t f = [s](std::complex<double> l) { return l * std::complex<double>(s); };
 
-    return Signal(fillFromOperator(f, chunk()), sampleRate_, channels_);
+    std::function<fill_t()> fn = [=]()->fill_t{ return fillFromOperator(f, chunk()); };
+
+    return Signal(fn, sampleRate_, channels_);
 
 }
 
@@ -135,13 +146,15 @@ Signal Signal::div(double s)
 {
     unop_t f = [s](std::complex<double> l) {return l / std::complex<double>(s);};
 
-    return Signal(fillFromOperator(f, chunk()), sampleRate_, channels_);
+    std::function<fill_t()> fn = [=]()->fill_t{ return fillFromOperator(f, chunk()); };
+
+    return Signal(fn, sampleRate_, channels_);
 
 }
 
 Signal Signal::shift(utime_t delay)
 {
-    return Signal(fillFromPhaseShift(delay, chunk()), sampleRate_, channels_);
+    return Signal(std::bind(fillFromPhaseShift, delay, chunk()), sampleRate_, channels_);
 }
 
 Chunk<Signal> Signal::chunk()

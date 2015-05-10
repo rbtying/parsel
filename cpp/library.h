@@ -44,13 +44,13 @@ using namespace psl;
 
 Signal psl::ift(Chunk<FSignal> fsignal)
 {
-    return Signal(psl::fillFromFrequency(fsignal),
+    return Signal(std::bind(psl::fillFromFrequency, fsignal),
             fsignal().sampleRate(), fsignal().channels());
 }
 
 FSignal psl::ft(Chunk<Signal> signal)
 {
-    return FSignal(signal, 5824);
+    return FSignal(signal, 500e3);
 }
 
 Signal psl::loadSignal(Chunk<std::vector<Chunk<char>>> file)
@@ -63,5 +63,5 @@ Signal psl::signal(Chunk<dubop_t> f)
     // TODO: get these in a better way!
     int sampleRate = 44100;
     int channels = 2;
-    return Signal(fillFromFunction(f, sampleRate, channels), sampleRate, channels);
+    return Signal(std::bind(fillFromFunction, f, sampleRate, channels), sampleRate, channels);
 }
