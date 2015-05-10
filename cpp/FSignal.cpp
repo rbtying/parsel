@@ -32,7 +32,8 @@ namespace psl {
         sampleRate_(std::shared_ptr<int>(new int(sampleRate))),
         channels_(std::shared_ptr<int>(new int(channels))),
         timeSpace_(std::shared_ptr<buffer_t>(new buffer_t())),
-        freqSpace_(std::shared_ptr<fbuffer_t>(new fbuffer_t()))
+        freqSpace_(std::shared_ptr<fbuffer_t>(new fbuffer_t())),
+        position_(std::shared_ptr<long>(new long(0)))
     { }
 
     FSignal::FSignal(Chunk<Signal> sig, utime_t timestep) :
@@ -46,7 +47,8 @@ namespace psl {
         timeSpace_(copy.timeSpace_),
         freqSpace_(copy.freqSpace_),
         sampleRate_(copy.sampleRate_),
-        channels_(copy.channels_)
+        channels_(copy.channels_),
+        position_(copy.position_)
     { }
 
     FSignal& FSignal::operator=(const FSignal& other)
@@ -58,6 +60,7 @@ namespace psl {
         freqSpace_ = other.freqSpace_;
         sampleRate_ = other.sampleRate_;
         channels_ = other.channels_;
+        position_ = other.position_;
     }
 
     void FSignal::computeTransform() {
@@ -102,10 +105,11 @@ namespace psl {
 
     bool FSignal::fillBuffer(bool B) {
         *consistent_ = false;
-        bool success = freq_f_(&(*freqSpace_), B);
+        bool success = freq_f_(&(*freqSpace_), (*position_ * 1.0) / sampleRate(), B);
         if (success) {
             computeTransform();
         }
+        *position_ += freqSpace_->size();
         *consistent_ = true;
         return success;
     }
@@ -114,7 +118,7 @@ namespace psl {
     {
         std::shared_ptr<Interval> itvlptr = std::make_shared<Interval>(sig2, timestep);
         std::shared_ptr<bool> succ = std::make_shared<bool>(true);
-        return [itvlptr, succ](fbuffer_t* buf, bool B) {
+        return [itvlptr, succ](fbuffer_t* buf, double t, bool B) {
             bool b2 = *succ;
 
             long bufsize = itvlptr->buffer_.size();
@@ -160,7 +164,7 @@ namespace psl {
         assert(lhs().channels() == rhs().channels());
         assert(lhs().sampleRate() == rhs().sampleRate());
 
-        return [lhs, rhs, f](fbuffer_t* buf, bool B) mutable
+        return [lhs, rhs, f](fbuffer_t* buf, double t, bool B) mutable
         {
             bool l_ok = lhs().fillBuffer(B);
             bool r_ok = rhs().fillBuffer(B);

@@ -15,7 +15,7 @@ namespace psl
 {
     typedef std::vector<std::complex<double>> fsample_t;
     typedef std::vector<fsample_t> fbuffer_t;
-    typedef std::function<bool(fbuffer_t*, bool)> freq_fill_t;
+    typedef std::function<bool(fbuffer_t*, double, bool)> freq_fill_t;
 
     class FSignal
     {
@@ -46,6 +46,7 @@ namespace psl
             std::shared_ptr<long> bins_;
             std::shared_ptr<int> sampleRate_;
             std::shared_ptr<int> channels_;
+            std::shared_ptr<long> position_;
 
             long NMAX_;
             long NMAXSQRT_;
