@@ -35,27 +35,49 @@ findGoodMain (Def d) = isGoodMain d
 findGoodMain (Struct _ _) = False
 
 defCheck :: AST -> Writer [Error] (VarScope, StructData, AST)
-defCheck ast = return (getScopes ast, getStructs ast, ast)
+defCheck ast =
+    do  varScope <- getScopes ast
+        return (varScope, getStructs ast, ast)
 
-getScopes :: AST -> VarScope
-getScopes ast = Map.unions $ map (getTopDefScope topScope) ast
-    where   topScope = Node builtInScope Empty
+getScopes :: AST -> Writer [Error] VarScope
+getScopes ast =
+    do  let topScope = Node builtInScope Empty
+        scopes <- mapM (getTopDefScope topScope) ast
+        return $ Map.unions scopes
+        
 
-getTopDefScope :: ScopeTree -> TopDef -> VarScope
-getTopDefScope parent (Def def) = getDefScope parent def 
-getTopDefScope _ _ = Map.empty
+getTopDefScope :: ScopeTree -> TopDef -> Writer [Error] VarScope
 
-getDefScope :: ScopeTree -> Def -> VarScope
-getDefScope parent (FuncDef sym tsyms rt expr) 
-    = getExprScope scope expr
-    where   scope = Node (Map.insert sym t $ toScopeTable tsyms) parent
-            t = FuncType (map (\(Tsym t' _) -> t') tsyms) rt
-getDefScope parent (VarDef tsym expr) = getExprScope parent expr
-
-
-getExprScope :: ScopeTree -> Expr -> VarScope
-getExprScope scope (Var _ ind) = Map.singleton ind scope
-getExprScope _ _ = Map.empty
+--getScopes :: AST -> VarScope
+--getScopes ast = Map.unions $ map (getTopDefScope topScope) ast
+--    where   topScope = Node builtInScope Empty
+--
+--getTopDefScope :: ScopeTree -> TopDef -> VarScope
+--getTopDefScope parent (Def def) = getDefScope parent def 
+--getTopDefScope _ _ = Map.empty
+--
+--getDefScope :: ScopeTree -> Def -> VarScope
+--getDefScope parent (FuncDef sym tsyms rt expr) 
+--    = getExprScope scope expr
+--    where   scope = Node table parent
+--            table = Map.insert sym ft $ toScopeTable tsyms
+--            ft = FuncType (map (\(Tsym t _) -> t) tsyms) rt
+--getDefScope parent (VarDef tsym expr) = getExprScope parent expr
+--
+--
+--getExprScope :: ScopeTree -> Expr -> VarScope
+--getExprScope scope (Var _ ind) = Map.singleton ind scope
+--getExprScope parent (LetExp defs expr) = Map.unions $ map (getExprScope scope) exprs
+--    where   scope = Node table parent
+--            table = Map.fromList $ map toPair defs
+--            toPair (VarDef (Tsym t sym) _) = (sym, t)
+--            toPair (FuncDef sym tsyms rt _) = (sym, ft)
+--                where ft = FuncType (map (\(Tsym t _) -> t) tsyms) rt
+--
+--            exprs = expr:(map getExpr defs)
+--            getExpr (VarDef _ e) = e
+--            getExpr (FuncDef _ _ _ e) = e
+--getExprScope _ _ = Map.empty
 
 
 toScopeTable :: [Tsym] -> SymbolTable
