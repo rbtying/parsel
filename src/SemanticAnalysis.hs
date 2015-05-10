@@ -58,51 +58,40 @@ getDefScope parent (FuncDef sym tsyms rt expr) =
         scope <- getExprScope scope expr
         return scope 
 
---getScopes :: AST -> VarScope
---getScopes ast = Map.unions $ map (getTopDefScope topScope) ast
---    where   topScope = Node builtInScope Empty
---
---getTopDefScope :: ScopeTree -> TopDef -> VarScope
---getTopDefScope parent (Def def) = getDefScope parent def 
---getTopDefScope _ _ = Map.empty
-
---getDefScope :: ScopeTree -> Def -> VarScope
---getDefScope parent (FuncDef sym tsyms rt expr) 
---    = getExprScope scope expr
---    where   scope = Node table parent
---            table = Map.insert sym ft $ toScopeTable tsyms
---            ft = FuncType (map (\(Tsym t _) -> t) tsyms) rt
---getDefScope parent (VarDef tsym expr) = getExprScope parent expr
-
 getExprScope :: ScopeTree -> Expr -> Writer [Error] VarScope
+getExprScope scope (Var sym ind) = toWriter search
+    where   search = searchForDef scope sym
 
---getExprScope scope (Var _ ind) = 
---    do  let search = searchForSym scope Var ind
---         Map.singleton ind scope 
---        return scope
---        
+            toWriter (Just _) = return table
+            toWriter Nothing = writer (table, [Undef sym])
+
+            table = Map.singleton ind scope
 
 getExprScope parent (LetExp defs expr) = 
-    do
-        scopes <- mapM (getExprScope scope) exprs 
+    do  scopes <- mapM (getExprScope scope) exprs 
         return $ Map.unions scopes
-        
         where   scope = Node table parent
                 table = Map.fromList $ map toPair defs
                 toPair (VarDef (Tsym t sym) _) = (sym, t)
                 toPair (FuncDef sym tsyms rt _) = (sym, ft)
                     where ft = FuncType (map (\(Tsym t _) -> t) tsyms) rt
-
                 exprs = expr:(map getExpr defs)
                 getExpr (VarDef _ e) = e
                 getExpr (FuncDef _ _ _ e) = e
-
---getExprScope parent (Lambda tsyms rt expr) = Map.unions $ getExprScope scope expr
---    where   scope = Node table parent
---            table = toScopeTable tsyms
-            
+getExprScope parent (Lambda tsyms rt expr) = getExprScope scope expr
+    where   scope = Node table parent
+            table = toScopeTable tsyms
+getExprScope scope (Cond expr1 expr2 expr3) =
+    do  let exprs = [expr1, expr2, expr3]
+        scopes <- mapM (getExprScope scope) exprs
+        return $ Map.unions scopes
 getExprScope _ _ = return Map.empty
 
+searchForDef :: ScopeTree -> Symbol -> Bool
+searchForDef (Node scope parent) sym
+    | Map.member sym scope = True
+    | otherwise = searchForDef parent sym
+searchForDef Empty _ = False
 
 toScopeTable :: [Tsym] -> SymbolTable
 toScopeTable = Map.fromList . map (\(Tsym t s) -> (s, t))
