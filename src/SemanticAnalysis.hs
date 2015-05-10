@@ -59,13 +59,11 @@ getDefScope parent (FuncDef sym tsyms rt expr) =
         return scope 
 
 getExprScope :: ScopeTree -> Expr -> Writer [Error] VarScope
-getExprScope scope (Var sym ind) = toWriter search
-    where   search = searchForDef scope sym
+getExprScope scope (Var sym ind)
+    | searchForDef scope sym = return table
+    | otherwise = writer (table, [Undef sym])
+    where   table = Map.singleton ind scope
 
-            toWriter (Just _) = return table
-            toWriter Nothing = writer (table, [Undef sym])
-
-            table = Map.singleton ind scope
 
 getExprScope parent (LetExp defs expr) = 
     do  scopes <- mapM (getExprScope scope) exprs 
@@ -85,6 +83,18 @@ getExprScope scope (Cond expr1 expr2 expr3) =
     do  let exprs = [expr1, expr2, expr3]
         scopes <- mapM (getExprScope scope) exprs
         return $ Map.unions scopes
+getExprScope scope (BinaryOp binop expr1 expr2) =
+    do  let exprs = [expr1, expr2]
+        scopes <- mapM (getExprScope scope) exprs
+        return $ Map.unions scopes
+getExprScope scope (Attr expr _) = getExprScope scope expr
+getExprScope scope (Tuple exprs) =
+    do  scopes <- mapM (getExprScope scope) exprs
+        return $ Map.unions scopes
+getExprScope scope (List exprs) =
+    do  scopes <- mapM (getExprScope scope) exprs
+        return $ Map.unions scopes
+getExprScope scope (UnaryOp unop expr) = getExprScope scope expr
 getExprScope _ _ = return Map.empty
 
 searchForDef :: ScopeTree -> Symbol -> Bool

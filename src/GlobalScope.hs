@@ -11,6 +11,8 @@ builtInScope = Map.fromList table
     where   table = [ (Symbol "sin", FuncType [f] f)
                     , (Symbol "cos", FuncType [f] f)
                     , (Symbol "ft", FuncType [s] fs)
+                    , (Symbol "ift", FuncType [fs] s)
+                    , (Symbol "length", FuncType, [s] f) 
                     ]
             f = Type . Symbol $ "float"
             s = Type . Symbol $ "signal"
