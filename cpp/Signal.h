@@ -28,12 +28,13 @@ namespace psl
     class Signal
     {
     public:
-        Signal(std::string filepath);
-        Signal(fill_t fill, int sampleRate, int channels);
+        Signal(std::function<fill_t()> fill_generator, int sampleRate, int channels);
         Signal(const Signal& copy);
         Signal& operator=(const Signal& other);
 
-       	bool fillBuffer(bool B);
+        Signal(std::string filepath);
+
+        bool fillBuffer(bool B);
 
         int sampleRate() const;
         int channels() const;
@@ -52,6 +53,7 @@ namespace psl
         Signal shift(utime_t delay);
 
         fill_t fill_;
+        std::function<fill_t()> fill_gen_;
         std::shared_ptr<buffer_t> buffer_;
 
     private:
@@ -63,7 +65,7 @@ namespace psl
         Chunk<Signal> chunk();
 
     };
-    
+
     Signal operator+(Chunk<Signal> s1, Chunk<Signal> s2);
     Signal operator-(Chunk<Signal> s1, Chunk<Signal> s2);
     Signal operator*(Chunk<Signal> s1, Chunk<Signal> s2);

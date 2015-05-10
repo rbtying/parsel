@@ -12,28 +12,30 @@ namespace psl {
 
         return [fsigptr](buffer_t* bufferP, bool B) {
             Chunk<FSignal> fsig = *fsigptr;
+            std::cout << bufferP->size() << std::endl;
             bool succ = fsig().fillBuffer(B);
             if (!succ) {
-                std::cout << "wah" << std::endl;
                 return false;
             }
 
-            for (buffer_t::const_iterator iter = fsig().timeSpace_->buffer_.begin(); iter != fsig().timeSpace_->buffer_.end(); ++iter) {
-                bufferP->push_back(*iter);
+            for (buffer_t::const_iterator iter = fsig().timeSpace_->begin(); iter != fsig().timeSpace_->end(); ++iter) {
+                (*bufferP)[iter - fsig().timeSpace_->begin()].assign(iter->begin(), iter->end());
             }
-            return fsig().timeSpace_->buffer_.size() == bufferP->size();
+            return fsig().timeSpace_->size() == bufferP->size();
         };
     }
-    FSignal::FSignal(freq_fill_t freq_f) :
+    FSignal::FSignal(freq_fill_t freq_f, int sampleRate, int channels) :
         freq_f_(freq_f),
         consistent_(std::shared_ptr<bool>(new bool(false))),
         bins_(std::shared_ptr<long>(new long(0))),
-        timeSpace_(std::shared_ptr<Interval>(new Interval())),
+        sampleRate_(std::shared_ptr<int>(new int(sampleRate))),
+        channels_(std::shared_ptr<int>(new int(channels))),
+        timeSpace_(std::shared_ptr<buffer_t>(new buffer_t())),
         freqSpace_(std::shared_ptr<fbuffer_t>(new fbuffer_t()))
     { }
 
     FSignal::FSignal(Chunk<Signal> sig, utime_t timestep) :
-        FSignal(fillFromSignal(sig, timestep))
+        FSignal(fillFromSignal(sig, timestep), sig().sampleRate(), sig().channels())
     { }
 
     FSignal::FSignal(const FSignal& copy) :
@@ -41,7 +43,9 @@ namespace psl {
         consistent_(copy.consistent_),
         bins_(copy.bins_),
         timeSpace_(copy.timeSpace_),
-        freqSpace_(copy.freqSpace_)
+        freqSpace_(copy.freqSpace_),
+        sampleRate_(copy.sampleRate_),
+        channels_(copy.channels_)
     { }
 
     FSignal& FSignal::operator=(const FSignal& other)
@@ -51,6 +55,8 @@ namespace psl {
         bins_ = other.bins_;
         timeSpace_ = other.timeSpace_;
         freqSpace_ = other.freqSpace_;
+        sampleRate_ = other.sampleRate_;
+        channels_ = other.channels_;
     }
 
     void FSignal::computeTransform() {
@@ -58,8 +64,8 @@ namespace psl {
             return;
         }
 
-        const buffer_t buf = timeSpace_->buffer();
-        long bufsize = buf.size();
+        long bufsize = timeSpace_->size();
+        std::cout << timeSpace_->size() << std::endl;
         assert(bufsize && !(bufsize & (bufsize - 1)));
         long n = bufsize * 2;
         long sqrt_n = static_cast<long>(std::sqrt(n) + 1);
@@ -70,10 +76,10 @@ namespace psl {
         freqSpace_->clear();
         freqSpace_->resize(bufsize);
 
-        for (int channel = 0; channel < timeSpace_->channels(); ++channel)
+        for (int channel = 0; channel < *channels_; ++channel)
         {
             long idx = 0;
-            for (buffer_t::const_iterator iter = buf.begin(); iter != buf.end(); ++iter)
+            for (buffer_t::const_iterator iter = timeSpace_->begin(); iter != timeSpace_->end(); ++iter)
             {
                 const sample_t samp = *iter;
                 a[2 * idx] = samp[channel].real();
@@ -90,10 +96,10 @@ namespace psl {
         }
         *bins_ = n;
 
-        timeSpace_->buffer_.clear();
-        timeSpace_->buffer_.resize(bufsize);
+        timeSpace_->clear();
+        timeSpace_->resize(bufsize);
 
-        for (int channel = 0; channel < timeSpace_->channels(); ++channel)
+        for (int channel = 0; channel < *channels_; ++channel)
         {
             long idx = 0;
             for (fbuffer_t::const_iterator iter = freqSpace_->begin(); iter != freqSpace_->end(); ++iter)
@@ -108,7 +114,7 @@ namespace psl {
 
             // a now contains the time-domain interpretation
             for (int k = 0; k < bufsize; ++k) {
-                timeSpace_->buffer_[k].push_back(std::complex<double>(a[2 * k], a[2 * k + 1]));
+                (*timeSpace_)[k].push_back(std::complex<double>(a[2 * k], a[2 * k + 1]));
             }
         }
 
@@ -126,24 +132,13 @@ namespace psl {
 
     freq_fill_t FSignal::fillFromSignal(Chunk<Signal> sig2, utime_t timestep)
     {
-        std::shared_ptr<Chunk<Signal>> sigptr = std::make_shared<Chunk<Signal>>(sig2);
-        return [sigptr, timestep](Interval* itvl, bool B) {
-            Chunk<Signal> sig = *sigptr;
-            // start after end of last interval
-            utime_t start_time = itvl->end();
-            utime_t end_time = start_time + timestep;
-
-            long time_step_in_samples = timestep * sig().sampleRate() / 1000000;
-            bool succ = sig().fillBuffer(B);
-            if (!succ) {
-                std::cout << "ahh" << std::endl;
-                return false;
-            }
-            assert(sig().buffer_->size() >= time_step_in_samples);
-
-            /* *itvl = Interval(sig, start_time, end_time); */
-            *itvl = Interval(sig, 0, timestep); // streams don't keep track of old data -.-
-            return true;
+        std::shared_ptr<Interval> itvlptr = std::make_shared<Interval>(sig2, timestep);
+        std::shared_ptr<bool> succ = std::make_shared<bool>(true);
+        return [itvlptr, succ](buffer_t* buf, bool B) {
+            bool b2 = *succ;
+            buf->assign(itvlptr->buffer_.begin(), itvlptr->buffer_.end());
+            *succ = itvlptr->advance();
+            return b2;
         };
     }
 }

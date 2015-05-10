@@ -12,7 +12,9 @@ namespace psl
     {
     public:
         Chunk();
+        Chunk(const Chunk& other);
         Chunk(std::function<T()> f);
+        Chunk& operator=(const Chunk& other);
         T operator()();
 
         std::function<T()> f_;
@@ -72,6 +74,19 @@ Chunk<T>::Chunk(std::function<T()> f) :
     f_(f),
     cache_(nullptr)
 { }
+
+template<class T>
+Chunk<T>::Chunk(const Chunk& other) :
+    f_(other.f_),
+    cache_(other.cache_)
+{ }
+
+template<class T>
+Chunk<T>& Chunk<T>::operator=(const Chunk& other)
+{
+    f_ = other.f_;
+    cache_ = other.cache_;
+}
 
 template<class T>
 T Chunk<T>::operator()()

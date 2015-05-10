@@ -10,19 +10,51 @@
 
 namespace psl
 {
-    Signal ift(Chunk<FSignal> fsignal);
 
-    FSignal ft(Chunk<Signal> signal);
+    auto ft = toChunk([]() { return
+    std::function<FSignal(Chunk<Signal>)>(
+        [](auto signal)
+        {
+            return FSignal(signal, 5824);
+        });
+    });
 
-    Signal loadSignal(Chunk<std::vector<Chunk<char>>> file);
+    auto ift = toChunk([]() { return
+    std::function<Signal(Chunk<FSignal>)>(
+        [](auto fsignal)
+        {
+            return Signal(std::bind(psl::fillFromFrequency, fsignal),
+                    fsignal().sampleRate(), fsignal().channels());
+        });
+    });
 
-    Signal signal(Chunk<dubop_t> f);
+    auto loadSignal = toChunk([] () { return
+    std::function<Signal(Chunk<std::vector<Chunk<char>>>)>(
+        [](auto file)
+        {
+            return Signal(toString(file()));
+        });
+    });
 
-    dubop_t sin =
+    auto signal = toChunk([] () { return
+    std::function<Signal(Chunk<dubop_t>)>(
+        [](auto f)
+        {
+            // TODO: get these in a better way!
+            int sampleRate = 44100;
+            int channels = 2;
+            return Signal(std::bind(fillFromFunction, f, sampleRate, channels),
+                    sampleRate, channels);
+        });
+    });
+
+    auto sin = toChunk([] () { return
+    dubop_t(
         [](auto t)
         {
             return std::sin(t());
-        };
+        });
+    });
 
     auto length = [](auto v) { return v().size(); };
 
@@ -38,30 +70,41 @@ namespace psl
     auto and_ = [](auto x, auto y) { return x && y; };
     auto or_ = [](auto x, auto y) { return x || y; };
     auto negate = [](auto x) { return !x; };
+
+    // TODO: not lazy!
+    auto map = [](auto &v, auto f) 
+    {
+        int size = v().size();
+        std::vector<Chunk<decltype(f()(v().at(std::declval<int>())))>> ret(size);
+
+        for(int i = 0; i < size; i++)
+            ret[i] = toChunk([v, f, i]() mutable { return f()(v().at(i)); });
+
+        return ret;
+    };
+
+    auto fold = [](auto &v, auto f)
+    {
+        int size = v().size();
+
+        // TODO: Handle the case when list is empty
+        
+        auto ret = v().at(0)();
+        for (int i = 1; i < size; i++)
+            ret = f()(toChunk([=] { return ret; }), v().at(i));
+
+        return ret;
+    };
+
+    auto foldl = [](auto &initValue, auto &v, auto f)
+    {
+        int size = v().size();
+
+        auto ret = initValue();
+        for (int i = 0; i < size; i++)
+            ret = f()(toChunk([=] { return ret; }), v().at(i));
+
+        return ret;
+    };
 }
 
-using namespace psl;
-
-Signal psl::ift(Chunk<FSignal> fsignal)
-{
-    return Signal(psl::fillFromFrequency(fsignal),
-            fsignal().sampleRate(), fsignal().channels());
-}
-
-FSignal psl::ft(Chunk<Signal> signal)
-{
-    return FSignal(signal, 5824);
-}
-
-Signal psl::loadSignal(Chunk<std::vector<Chunk<char>>> file)
-{
-    return Signal(toString(file()));
-}
-
-Signal psl::signal(Chunk<dubop_t> f)
-{
-    // TODO: get these in a better way!
-    int sampleRate = 44100;
-    int channels = 2;
-    return Signal(fillFromFunction(f, sampleRate, channels), sampleRate, channels);
-}

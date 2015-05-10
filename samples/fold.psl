@@ -1,0 +1,4 @@
+main(input[char], otherinput[char]) -> (signal) =
+    let sum(signal a, signal b) -> signal = a + b
+    in [fold(sum, map(loadSignal, [input, otherinput]))]
+

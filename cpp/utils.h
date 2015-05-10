@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <string>
+#include <algorithm>
 
 namespace psl
 {
@@ -63,7 +64,7 @@ namespace psl
     {
         return [=]() mutable
         {
-            return Signal(toWavFile(signal, toString(path()), stoi(toString(time()))),
+            return Signal(std::bind(toWavFile, signal, toString(path()), stoi(toString(time()))),
                     signal().sampleRate(), signal().channels());
         };
     }

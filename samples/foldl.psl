@@ -1,0 +1,5 @@
+main(input[char]) -> (signal) =
+    let sum(signal a, signal b) -> signal = a + b
+        signal init = signal with \(float t) -> complex = sin(t * 3300)
+    in [foldl(sum, [loadSignal(input)], init)]
+
