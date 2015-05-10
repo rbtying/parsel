@@ -60,13 +60,21 @@ getStructSymbols n ast = Map.fromList (map getSymbolMap [1..numberSymbols])
 getStructSymbol :: Int -> Int -> AST -> Symbol
 getStructSymbol n n2 ast = getTsym ((structList ast) !! (n-1))
     where   getTsym (Struct (Symbol _) ts) =  getSymbol (ts !! n2)
-             where   getSymbol (Tsym (Type _) (Symbol s)) = (Symbol s)
- 
+              where   getSymbol (Tsym (Type _) (Symbol s)) = (Symbol s) 
+                      getSymbol (Tsym (ListType _) _) = Symbol ""
+                      getSymbol (Tsym (TupleType _) _) = Symbol ""
+                      getSymbol (Tsym (FuncType _ _) _) = Symbol ""
+            getTsym (Def _) = Symbol ""
+
 getSymType :: Int -> Int -> AST -> Type
 getSymType n n2 ast = getTsym ((structList ast) !! (n-1))
     where   getTsym (Struct (Symbol _) ts) = getTsymType (ts !! n2)
              where  getTsymType (Tsym  (Type t) (Symbol _)) = (Type t)
-
+                    getTsymType (Tsym (ListType _) _) = Type (Symbol "")
+                    getTsymType (Tsym (TupleType _) _) = Type (Symbol "")
+                    getTsymType (Tsym (FuncType _ _) _) = Type (Symbol "")
+            getTsym (Def _) = Type (Symbol "")
 symbolLength :: Int -> AST -> Int
 symbolLength n ast = lengthTsym ((structList ast) !! (n-1))
     where   lengthTsym (Struct (Symbol _) ts) = length ts
+            lengthTsym (Def _) = 0
