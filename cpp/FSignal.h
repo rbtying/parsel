@@ -22,16 +22,18 @@ namespace psl
         public:
             FSignal(freq_fill_t freq_f);
             FSignal(Chunk<Signal> sig, utime_t timestep);
+            FSignal(const FSignal& copy);
+            FSignal& operator=(const FSignal& other);
 
-            int bins() const { return bins_; }
-            int sampleRate() const { return timeSpace_.sampleRate(); }
-            int channels() const { return timeSpace_.channels(); }
-            int consistent() const { return consistent_; }
+            int bins() const { return *bins_; }
+            int sampleRate() const { return timeSpace_->sampleRate(); }
+            int channels() const { return timeSpace_->channels(); }
+            int consistent() const { return *consistent_; }
 
             bool fillBuffer(bool B);
 
-            Interval timeSpace_;
-            fbuffer_t freqSpace_;
+            std::shared_ptr<Interval> timeSpace_;
+            std::shared_ptr<fbuffer_t> freqSpace_;
 
         private:
             void computeTransform();
@@ -39,8 +41,8 @@ namespace psl
             freq_fill_t fillFromSignal(Chunk<Signal> sig, utime_t timestep);
 
             freq_fill_t freq_f_;
-            bool consistent_;
-            long bins_;
+            std::shared_ptr<bool> consistent_;
+            std::shared_ptr<long> bins_;
 
             long NMAX_;
             long NMAXSQRT_;

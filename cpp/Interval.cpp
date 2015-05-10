@@ -11,8 +11,8 @@ namespace psl
     {
         assert(endTime >= startTime);
 
-        long start_offset = startTime_ * sampleRate_;
-        long end_offset = endTime_ * sampleRate_;
+        long start_offset = startTime_ * sampleRate_ / 1000000;
+        long end_offset = endTime_ * sampleRate_ / 1000000;
 
         // fail hard if we can't construct a valid interval
         assert(end_offset < sig().buffer_->size());

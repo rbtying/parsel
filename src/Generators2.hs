@@ -39,9 +39,17 @@ genExpr (Var (Symbol sym) _)
     | sym == "ft"           = "psl::ft"
     | sym == "intervalMap"  = "psl::intervalMap"
     | sym == "toSignal"     = "psl::toSignal"
+    | sym == "length"       = "psl::length"
     | otherwise     = sym
 
-genExpr (Lambda tsyms _ expr) = toChunk $ genLambda tsyms expr
+genExpr (Lambda tsyms t expr) = toChunk $ func ++ "(" ++ lambda ++ ")"
+    where   func = "std::function<" ++ genRawType t ++ "(" ++ ts ++ ")>"
+            ts = intercalate ", " $ map (genType . \(Tsym t' _) -> t') tsyms
+
+            lambda = "[=](" ++ args ++ ") mutable {\n " ++ body ++ "\n}"
+            args = intercalate ", " $ map genTsym tsyms
+            body = genReturn expr
+
 
 genExpr (LetExp ds expr) = "[=]() mutable {" ++ n:decs ++ n:defs ++ n:out ++ n:"}"
     where   (decs, defs) = genDefs ds
@@ -49,17 +57,12 @@ genExpr (LetExp ds expr) = "[=]() mutable {" ++ n:decs ++ n:defs ++ n:out ++ n:"
             n = '\n'
 
 -- TODO: is this lazy?
-genExpr (Cond expr1 expr2 expr3) = "[=]() mutable {\n" ++ cond ++ "\n}"
+genExpr (Cond expr1 expr2 expr3) = toChunk $ "[=]() mutable {\n" ++ cond ++ "\n}()"
     where   cond = "if(" ++ e1 ++ ") {\n" ++ e2 ++ "\n}\nelse {\n" ++ e3 ++ "\n};"
             e1 = genRawExpr expr1
             e2 = genReturn expr2
             e3 = genReturn expr3
 
-
-genLambda :: Tsyms -> Expr -> [Char]
-genLambda tsyms expr = "[=](" ++ args ++ ") mutable {\n " ++ body ++ "\n}"
-    where   args = intercalate ", " $ map genTsym tsyms
-            body = genReturn expr
 
 genReturn :: Expr -> [Char]
 genReturn expr = "return " ++ genRawExpr expr ++ ";"

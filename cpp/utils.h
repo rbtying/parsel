@@ -15,8 +15,8 @@ namespace psl
         return f(as...);
     }
 
-    template<class T, class... Args>
-    T apply(Chunk<std::function<T(Args...)>> c, Args... as)
+    template<class F, class... Args>
+    auto apply(Chunk<F> c, Args... as) -> decltype(c()(as...))
     {
         return c()(as...);
     }

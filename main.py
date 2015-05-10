@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from os import listdir
 from os.path import isfile, join
 from time import sleep
@@ -6,13 +8,13 @@ import os
 from test.builder import Builder
 from test.base import Base
 from test.tester import Tester
-def main():    
+def main():
     options = {1 : moreArgs, 2 : enoughArgs, 3 : enoughArgs, 4 : enoughArgs, 5: enoughArgs, 6: enoughArgs, 7: enoughArgs, 8: enoughArgs, 9: enoughArgs }
     options[len(sys.argv)]()
     FILETYPE = ""
     if len(sys.argv) > 3:
         if sys.argv[2].split(".")[1] == "cpp":
-            output_file = sys.argv[2]       
+            output_file = sys.argv[2]
             FILETYPE = "cpp"
         if sys.argv[2].split(".")[1] == "wav":
             sample_file = sys.argv[2]
@@ -26,7 +28,7 @@ def main():
         if len(f.split(".")) == 2:
             if f.split(".")[1] == "hs":
                 files.append("src/" + f)
-    onlyfiles = [ f for f in listdir("cpp") if isfile(join("cpp",f)) ] 
+    onlyfiles = [ f for f in listdir("cpp") if isfile(join("cpp",f)) ]
     for f in onlyfiles:
         files.append("cpp/" + f)
     files.append(sys.argv[1])
