@@ -12,13 +12,14 @@ namespace psl {
 
         return [fsigptr](buffer_t* bufferP, bool B) {
             Chunk<FSignal> fsig = *fsigptr;
+            std::cout << bufferP->size() << std::endl;
             bool succ = fsig().fillBuffer(B);
             if (!succ) {
                 return false;
             }
 
             for (buffer_t::const_iterator iter = fsig().timeSpace_->begin(); iter != fsig().timeSpace_->end(); ++iter) {
-                bufferP->push_back(*iter);
+                (*bufferP)[iter - fsig().timeSpace_->begin()].assign(iter->begin(), iter->end());
             }
             return fsig().timeSpace_->size() == bufferP->size();
         };

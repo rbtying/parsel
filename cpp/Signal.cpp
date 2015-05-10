@@ -6,7 +6,6 @@
 #include <iostream>
 
 // TODO: do this better
-#define BUFFER_SECS 0.01
 
 using namespace psl;
 
@@ -19,7 +18,7 @@ Signal::Signal(SndfileHandle& file) :
 { }
 
 Signal::Signal(std::function<fill_t()> fill_generator, int sampleRate, int channels) :
-    buffer_(new buffer_t(sampleRate * BUFFER_SECS, sample_t(channels, 0))),
+    buffer_(new buffer_t(4096, sample_t(channels, 0))),
     fill_gen_(fill_generator),
     fill_(fill_generator()),
     cacheB_(new bool(false)),
