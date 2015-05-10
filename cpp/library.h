@@ -87,6 +87,8 @@ namespace psl
     {
         int size = v().size();
 
+        // TODO: Handle the case when list is empty
+        
         auto ret = v().at(0)();
         for (int i = 1; i < size; i++)
             ret = f()(toChunk([=] { return ret; }), v().at(i));
@@ -94,13 +96,13 @@ namespace psl
         return ret;
     };
 
-    auto foldl = [](auto &v, auto f, auto initValue)
+    auto foldl = [](auto &initValue, auto &v, auto f)
     {
         int size = v().size();
 
-        auto ret = initValue;
-        for (int i = 1; i < size; i++)
-            ret = f(ret, v().at(i));
+        auto ret = initValue();
+        for (int i = 0; i < size; i++)
+            ret = f()(toChunk([=] { return ret; }), v().at(i));
 
         return ret;
     };
