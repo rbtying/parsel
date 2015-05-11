@@ -167,6 +167,10 @@ castType _ _ expr t et
         Just $ fromTuple expr
     | TupleType [et] == t =
         Just $ Tuple [expr]
+    | et == ListType t =
+        Just $ fromList expr
+    | ListType et == t =
+        Just $ List [expr]
     | t == complex && (et == float || et == int) =
         Just $ Func (Var (Symbol "toComplex") 0) [expr]
     | et == complex && (t == float || t == int) =
@@ -249,3 +253,7 @@ endsWith str suf = not $ False `elem` zipWith (==) (reverse str) (reverse suf)
 fromTuple :: Expr -> Expr
 fromTuple (Tuple [expr]) = expr
 fromTuple expr = expr
+
+fromList :: Expr -> Expr
+fromList (List [expr]) = expr
+fromList expr = expr
