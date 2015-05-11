@@ -43,8 +43,11 @@ checkDef sd parent (FuncDef sym tsyms rt expr) =
     do  let scope = Scope table parent
             table = Map.insert sym [ft] $ toScopeTable tsyms
             ft = FuncType (map (\(Tsym t _) -> t) tsyms) rt
+
+            rt' = if s == "main" then ListType . Type . Symbol $ "signal" else rt
+            Symbol s = sym
         expr' <- checkExpr sd scope expr
-        expr'' <- attemptCast sd scope [rt] expr'
+        expr'' <- attemptCast sd scope [rt'] expr'
         return $ FuncDef sym tsyms rt expr''
 checkDef sd scope (VarDef (Tsym t sym) expr) =
     do  expr' <- checkExpr sd scope expr
@@ -81,9 +84,11 @@ checkExpr sd scope (Func expr exprs) =
                       foldChecker es (checker, e) = checker e >>= return . (:es)
             writerLength = length . snd . runWriter
 
+            checkedLists = map checkList argTypeLists
+
         exprs' <-   if length argTypeLists > 0
-                    then minimumBy (compare `on` writerLength) $ map checkList argTypeLists
-                    else return exprs
+                    then minimumBy (compare `on` writerLength) checkedLists
+                    else mapM (checkExpr sd scope) exprs
 
         return $ Func expr' exprs'
 checkExpr _ scope (Var sym i)
@@ -129,26 +134,46 @@ checkAndCast _ _ (Left err) expr = writer (expr, [MisusedType err])
 
 
 attemptCast :: StructData -> ScopeStack -> [Type] -> Expr -> Writer [Error] Expr
-attemptCast sd scope ts expr = attemptCast' $ getTypes sd scope expr
-    where   attemptCast' (Right ets)
-                | ets `eq` ts =
-                    return expr
-                | ets `eq` toTuples ts =
-                    return $ fromTuple expr
-                | toTuples ets `eq` ts =
-                    return $ Tuple [expr]
-                | complex `elem` ts && (float `elem` ets || int `elem` ets) =
-                    return $ Func (Var (Symbol "toComplex") 0) [expr]
-                | complex `elem` ets && (float `elem` ts || int `elem` ts) =
-                    return $ Func (Var (Symbol "fromComplex") 0) [expr]
-                | otherwise =
-                    writer (expr, [WrongType ts ets])
-            attemptCast' (Left err) = writer (expr, [MisusedType err])
-            toTuples = map (\t -> TupleType [t])
+attemptCast sd scope ts expr = toWriter $ attemptCast' sd scope ts expr
+    where   toWriter (Just expr') = return expr'
+            toWriter Nothing = writer (expr, [WrongType ts ets])
+            ets = toTypes . getTypes sd scope $ expr
+            toTypes (Right ets') = ets'
+            toTypes (Left _) = []
 
-            eq a b = length (intersect a b) > 0
+attemptCast' :: StructData -> ScopeStack -> [Type] -> Expr -> Maybe Expr
+attemptCast' sd scope ts expr = toMaybeExpr $ getTypes sd scope expr
+    where toMaybeExpr (Right ets) = if ets == [] || ts == []
+                                    then Just expr
+                                    else if length casts > 0
+                                    then head casts
+                                    else Nothing
+            where   casts = filter isJust $ map cast typePairs
+                    cast (t, et) = castType sd scope expr t et
+                    typePairs = [(t, et) | t <- ts, et <- ets]
+          toMaybeExpr (Left _) = Nothing
 
-            complex = Type . Symbol $ "complex"
+
+castType :: StructData -> ScopeStack -> Expr -> Type -> Type -> Maybe Expr
+castType sd scope (Tuple exprs) (TupleType ts) _ =
+    mapM cast (zip ts exprs) >>= Just . Tuple
+    where   cast (t, expr) = attemptCast' sd scope [t] expr
+castType sd scope (List exprs) (ListType t) _ =
+    mapM (attemptCast' sd scope [t]) exprs >>= Just . List
+castType _ _ expr t et
+    | et == t =
+        Just expr
+    | et == TupleType [t] =
+        Just $ fromTuple expr
+    | TupleType [et] == t =
+        Just $ Tuple [expr]
+    | t == complex && (et == float || et == int) =
+        Just $ Func (Var (Symbol "toComplex") 0) [expr]
+    | et == complex && (t == float || t == int) =
+        Just $ Func (Var (Symbol "toComplex") 0) [expr]
+    | otherwise =
+        Nothing
+    where   complex = Type . Symbol $ "complex"
             float   = Type . Symbol $ "float"
             int     = Type . Symbol $ "int"
 

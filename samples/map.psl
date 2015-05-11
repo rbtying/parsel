@@ -1,3 +1,2 @@
-main(input[char], otherinput[char]) -> (signal, signal) =
-#    let myload(thing[char]) -> signal = loadSignal(thing)
-    map(loadSignal, [input, otherinput])
+main(input[char], otherinput[char]) -> (signal, signal) = map(loadSignal, [input, otherinput])
+#    in [loadSignal(input), loadSignal(otherinput)]

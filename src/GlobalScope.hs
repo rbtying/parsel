@@ -21,7 +21,21 @@ builtInScope = Map.fromList table
                     , (Symbol "toComplex", [FuncType [f] c])
                     , (Symbol "fromComplex", [FuncType [c] f])
                     , (Symbol "psl::greaterThan", compType)
+                    , (Symbol "psl::greaterThanEq", compType)
+                    , (Symbol "psl::lessThan", compType)
+                    , (Symbol "psl::lessThanEq", compType)
+                    , (Symbol "psl::eq", compType)
+                    , (Symbol "psl::plus", arithmeticType)
+                    , (Symbol "psl::minus", arithmeticType)
                     , (Symbol "psl::multiply", arithmeticType)
+                    , (Symbol "psl::divide", arithmeticType)
+                    , (Symbol "psl::and_", [FuncType [b, b] b])
+                    , (Symbol "psl::or_", [FuncType [b, b] b])
+                    , (Symbol "psl::negate", [FuncType [b] b])
+                    , (Symbol "map", untyped)
+                    , (Symbol "fold", untyped)
+                    , (Symbol "foldl", untyped)
+                    , (Symbol "at", untyped)
                     ]
             f   = Type . Symbol $ "float"
             z   = Type . Symbol $ "int"
@@ -44,6 +58,7 @@ builtInScope = Map.fromList table
                         , FuncType [z, z] b
                         , FuncType [t, t] b
                         , FuncType [h, h] b ]
+            untyped = []
 
 builtInStructData :: StructData
 builtInStructData = Map.fromList [

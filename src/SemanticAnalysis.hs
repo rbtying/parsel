@@ -19,18 +19,15 @@ mainCheck ast
     where   mains = map toGoodMain ast
             ast' = map fromM $ zip mains ast
             
-            fromM (Just td', td) = td'
+            fromM (Just td', _) = td'
             fromM (Nothing, td) = td
 
 
 toGoodMain :: TopDef -> Maybe TopDef
 toGoodMain (Def (FuncDef (Symbol sym) tsyms (TupleType ts) expr))
-    | isGoodMain = Just $ Def (FuncDef (Symbol sym) tsyms (TupleType ts) expr')
+    | isGoodMain = Just $ Def (FuncDef (Symbol sym) tsyms (TupleType ts) expr)
     | otherwise = Nothing
-    where   expr' = List exprs
-            Tuple exprs = expr
-            
-            isGoodMain  = goodArgs && goodts && length ts > 0 && sym == "main"
+    where   isGoodMain  = goodArgs && goodts && length ts > 0 && sym == "main"
             goodArgs = all isCharList tsyms
             goodts = all isSignal ts
 

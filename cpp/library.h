@@ -154,5 +154,10 @@ namespace psl
 
         return ret;
     };
+
+    auto at = [](auto &v, auto i)
+    {
+        return v[i];
+    };
 }
 

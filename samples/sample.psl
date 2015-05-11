@@ -1,16 +1,10 @@
-main(input[char]) -> (signal) = 
-    let signal s = intervalMap(10ms, filterInterval, signalFromWav(input))
-        signal m = signal with sin, sampleRate(s)
-        signal p = thing(s)(s)
-    in (m + p)
+main(input[char]) -> (signal) =
+    intervalMap(10ms, filterInterval, signalFromWav(input))
 
-thing(signal s) -> (signal) -> signal =
-    let t(signal s) -> signal = \(signal i) -> signal = s
-    in t
 
 filterInterval(interval input) -> interval =
-    let freq thing = 1000Hz cutoff(time t) -> freq = envelope(0, 10s, t) * thing in
-        applyFilterF with leftRightFilter(cutoff(input.start)), input
+    let freq thing = 1000Hz cutoff(time t) -> freq = envelope(0, 10s, t) * thing
+    in applyFilterF with leftRightFilter(cutoff(input.start)), input
 
 leftRightFilter(freq cutoff) -> fsignal = fsignal with
     \(freq f) -> sample = if f < cutoff then (1, 0) else (0, 1)
