@@ -32,6 +32,7 @@ builtInScope = Map.fromList table
                     , (Symbol "psl::and_", [FuncType [b, b] b])
                     , (Symbol "psl::or_", [FuncType [b, b] b])
                     , (Symbol "psl::negate", [FuncType [b] b])
+                    , (Symbol "freqShift", [FuncType [fm, fs] fs])
                     , (Symbol "map", untyped)
                     , (Symbol "fold", untyped)
                     , (Symbol "foldl", untyped)
@@ -53,7 +54,8 @@ builtInScope = Map.fromList table
                                 , FuncType [z, z] z
                                 , FuncType [c, c] c
                                 , FuncType [t, t] t
-                                , FuncType [h, h] h ]
+                                , FuncType [h, h] h
+                                , FuncType [s, s] s ]
             compType =  [ FuncType [f, f] b
                         , FuncType [z, z] b
                         , FuncType [t, t] b

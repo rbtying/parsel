@@ -1,0 +1,3 @@
+main() -> (signal) =
+    let signal sig = signal with \(float t) -> complex = sin(3300 * t)
+    in ift with freqShift(ft(sig), \(float s) -> complex = 300 * s)

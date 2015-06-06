@@ -1,2 +1,2 @@
-main(input[char], otherinput[char]) -> (signal, signal) = map(loadSignal, [input, otherinput])
-#    in [loadSignal(input), loadSignal(otherinput)]
+main(input[char], otherinput[char]) -> (signal, signal) =
+    map with loadSignal, [input, otherinput]

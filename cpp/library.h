@@ -137,11 +137,11 @@ namespace psl
 
         // TODO: Handle the case when list is empty
 
-        auto ret = v().at(0)();
+        auto ret = v().at(0);
         for (int i = 1; i < size; i++)
-            ret = f()(toChunk([=] { return ret; }), v().at(i));
+            ret = f()(ret, v().at(i));
 
-        return ret;
+        return ret();
     };
 
     auto foldl = [](auto &initValue, auto &v, auto f)

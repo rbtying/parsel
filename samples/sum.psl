@@ -1,0 +1,2 @@
+main(input[char], otherinput[char]) -> (signal) =
+    loadSignal(input) + loadSignal(otherinput)
